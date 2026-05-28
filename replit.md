@@ -1,44 +1,65 @@
-# [Project name]
+# SG Overseer
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A custom Discord moderation bot for the SG server. Handles member verification, mainer status, and role-based command permissions. Uses a Discord channel as a persistent data store.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server + Discord bot (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DISCORD_BOT_TOKEN` — Discord bot token (set in Replit Secrets)
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
+- Discord: discord.js v14
 - Build: esbuild (CJS bundle)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/api-server/src/bot/` — all bot code
+  - `index.ts` — bot startup, command/event registration
+  - `store.ts` — Discord-channel-backed persistent data store
+  - `permissions.ts` — admin + role permission checks
+  - `components.ts` — Discord v2 container message builders
+  - `commands/` — individual slash command handlers
+  - `prefix-handler.ts` — `$` prefix command router
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Data store is a Discord channel** (ID: `1501175897678413836`). On startup the bot reads up to 100 messages from that channel and hydrates an in-memory Map. Writes append new messages — latest entry per key wins.
+- **All commands are admin-only by default.** Role permissions are layered on top via `/add-perm`.
+- **`add-perm` is strictly admin-only** — it cannot be granted to any role, and trying to grant it via `/add-perm` is rejected.
+- **Discord v2 container components** (`MessageFlags.IsComponentsV2`, `ContainerBuilder`) are used for post-action confirmation messages.
+- Bot runs alongside the Express server in the same Node.js process.
 
-## Product
+## Bot Commands
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+| Command | Prefix | Description |
+|---|---|---|
+| `/verify-roles` | slash only | Set verified/unverified/mainer roles for the server |
+| `/verify <user>` | `$verify <user>` | Give verified role, remove unverified |
+| `/mainer <user>` | `$mainer <user>` | Give mainer + verified roles, remove unverified |
+| `/add-perm <role> <command>` | `$add-perm <role> <command>` | Grant a role access to a command (admin only) |
+
+## Bot Setup Checklist
+
+1. Invite bot with **Manage Roles** and **Send Messages** permissions
+2. Enable **Server Members Intent** and **Message Content Intent** in Discord Dev Portal → Bot → Privileged Gateway Intents
+3. Move bot's role **above** the roles it needs to assign
+4. Run `/verify-roles` to configure the verification role trio
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Bot prefix: `$`
+- Data storage: Discord channel `1501175897678413836`
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The bot needs **Message Content Intent** enabled in the Discord Developer Portal for `$` prefix commands to work.
+- The bot's role must be **higher than** the roles it assigns (verified, unverified, mainer) in the role hierarchy.
+- Slash commands are registered **globally** — they can take up to 1 hour to propagate to all Discord clients after the first registration.
 
 ## Pointers
 
