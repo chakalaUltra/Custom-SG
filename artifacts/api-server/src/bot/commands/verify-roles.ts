@@ -5,6 +5,7 @@ import {
 } from "discord.js";
 import { saveVerifyRoles } from "../store.js";
 import { buildActionContainer } from "../components.js";
+import { E } from "../emojis.js";
 
 export const data = new SlashCommandBuilder()
   .setName("verify-roles")
@@ -34,7 +35,7 @@ export async function execute(
 ): Promise<void> {
   if (!interaction.guild) {
     await interaction.reply({
-      content: "❌ This command can only be used in a server.",
+      content: `${E.cross} This command can only be used in a server.`,
       ephemeral: true,
     });
     return;
@@ -51,7 +52,7 @@ export async function execute(
   });
 
   const payload = buildActionContainer(
-    "⚙️ Verification Roles Configured",
+    `${E.sliders} Verification Roles Configured`,
     [
       `Verified: <@&${verified.id}> · Unverified: <@&${unverified.id}> · Mainer: <@&${mainer.id}>`,
     ],

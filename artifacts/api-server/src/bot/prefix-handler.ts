@@ -13,7 +13,9 @@ import { runUnban } from "./commands/unban.js";
 import { runKick } from "./commands/kick.js";
 import { runModinfo } from "./commands/modinfo.js";
 import { runModlogs } from "./commands/modlogs.js";
+import { runRoleByResolvable } from "./commands/role.js";
 import { logger } from "../lib/logger.js";
+import { E } from "./emojis.js";
 
 const PREFIX = "$";
 
@@ -44,25 +46,25 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
   };
 
   switch (commandName) {
-    // ─── Verification ───────────────────────────────────────────────────────
+    // ─── Verification ────────────────────────────────────────────────────────
     case "verify": {
       if (!canRunCommand(member, "verify")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply("❌ Usage: `$verify @user`"); return; }
+      if (!target) { await message.reply(`${E.cross} Usage: \`$verify @user\``); return; }
       await runVerify(target, member, send);
       break;
     }
 
     case "mainer": {
       if (!canRunCommand(member, "mainer")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply("❌ Usage: `$mainer @user`"); return; }
+      if (!target) { await message.reply(`${E.cross} Usage: \`$mainer @user\``); return; }
       await runMainer(target, member, send);
       break;
     }
@@ -72,82 +74,82 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
       break;
     }
 
-    // ─── Warnings ───────────────────────────────────────────────────────────
+    // ─── Warnings ────────────────────────────────────────────────────────────
     case "warn": {
       if (!canRunCommand(member, "warn")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply("❌ Usage: `$warn @user <reason>`"); return; }
+      if (!target) { await message.reply(`${E.cross} Usage: \`$warn @user <reason>\``); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
       await runWarn(message.guild.id, target.id, target.user.tag, member, reason, send);
       break;
     }
 
     case "warnings": {
       if (!canRunCommand(member, "warnings")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply("❌ Usage: `$warnings @user`"); return; }
+      if (!target) { await message.reply(`${E.cross} Usage: \`$warnings @user\``); return; }
       await runWarnings(message.guild.id, target.id, target.user.tag, send);
       break;
     }
 
     case "dewarn": {
       if (!canRunCommand(member, "dewarn")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply("❌ Usage: `$dewarn @user`"); return; }
+      if (!target) { await message.reply(`${E.cross} Usage: \`$dewarn @user\``); return; }
       await sendDewarnMenu(message.guild.id, target.id, target.user.tag, send);
       break;
     }
 
-    // ─── Mod Actions ────────────────────────────────────────────────────────
+    // ─── Mod Actions ─────────────────────────────────────────────────────────
     case "mute": {
       if (!canRunCommand(member, "mute")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply("❌ Usage: `$mute @user <duration> <reason>`"); return; }
+      if (!target) { await message.reply(`${E.cross} Usage: \`$mute @user <duration> <reason>\``); return; }
       const duration = args[1];
-      if (!duration) { await message.reply("❌ Please provide a duration (e.g. `10m`, `2h`, `1d`)."); return; }
+      if (!duration) { await message.reply(`${E.cross} Please provide a duration (e.g. \`10m\`, \`2h\`, \`1d\`).`); return; }
       const reason = args.slice(2).join(" ");
-      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
       await runMute(message.guild.id, target, member, duration, reason, send);
       break;
     }
 
     case "unmute": {
       if (!canRunCommand(member, "unmute")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply("❌ Usage: `$unmute @user <reason>`"); return; }
+      if (!target) { await message.reply(`${E.cross} Usage: \`$unmute @user <reason>\``); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
       await runUnmute(message.guild.id, target, member, reason, send);
       break;
     }
 
     case "ban": {
       if (!canRunCommand(member, "ban")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const userArg = args[0];
-      if (!userArg) { await message.reply("❌ Usage: `$ban @user <reason>`"); return; }
+      if (!userArg) { await message.reply(`${E.cross} Usage: \`$ban @user <reason>\``); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
       const userId = extractUserId(userArg);
-      if (!userId) { await message.reply("❌ Please mention a user or provide a user ID."); return; }
+      if (!userId) { await message.reply(`${E.cross} Please mention a user or provide a user ID.`); return; }
       const target = await message.guild.members.fetch(userId).catch(() => null);
       await runBan(message.guild.id, userId, target?.user.tag ?? userId, target, member, reason, send);
       break;
@@ -155,40 +157,54 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
 
     case "unban": {
       if (!canRunCommand(member, "unban")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const userArg = args[0];
-      if (!userArg) { await message.reply("❌ Usage: `$unban <userID> <reason>`"); return; }
+      if (!userArg) { await message.reply(`${E.cross} Usage: \`$unban <userID> <reason>\``); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
       const userId = extractUserId(userArg);
-      if (!userId) { await message.reply("❌ Please provide a valid user ID."); return; }
+      if (!userId) { await message.reply(`${E.cross} Please provide a valid user ID.`); return; }
       await runUnban(message.guild.id, userId, member, reason, send, message.client);
       break;
     }
 
     case "kick": {
       if (!canRunCommand(member, "kick")) {
-        await message.reply("❌ You do not have permission to use this command.");
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply("❌ Usage: `$kick @user <reason>`"); return; }
+      if (!target) { await message.reply(`${E.cross} Usage: \`$kick @user <reason>\``); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
       await runKick(message.guild.id, target, member, reason, send);
       break;
     }
 
-    // ─── Info & Config ──────────────────────────────────────────────────────
-    case "modinfo": {
-      if (!canRunCommand(member, "modinfo")) {
-        await message.reply("❌ You do not have permission to use this command.");
+    // ─── Role ─────────────────────────────────────────────────────────────────
+    case "role": {
+      if (!canRunCommand(member, "role")) {
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply("❌ Usage: `$modinfo @user`"); return; }
+      if (!target) { await message.reply(`${E.cross} Usage: \`$role @user <role name or ID>\``); return; }
+      const roleResolvable = args.slice(1).join(" ");
+      if (!roleResolvable) { await message.reply(`${E.cross} Please provide a role name or ID.`); return; }
+      await runRoleByResolvable(message, target, member, roleResolvable, send);
+      break;
+    }
+
+    // ─── Info & Config ────────────────────────────────────────────────────────
+    case "modinfo": {
+      if (!canRunCommand(member, "modinfo")) {
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply(`${E.cross} Usage: \`$modinfo @user\``); return; }
       await runModinfo(message.guild.id, target.id, target.user.tag, send);
       break;
     }

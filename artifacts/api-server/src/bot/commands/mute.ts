@@ -8,6 +8,7 @@ import { saveModAction, generateId } from "../store.js";
 import { buildActionContainer } from "../components.js";
 import { canRunCommand } from "../permissions.js";
 import { dispatchModLog } from "../modlog.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "mute";
 
@@ -32,12 +33,12 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} You do not have permission to use this command.`, ephemeral: true });
     return;
   }
 
@@ -49,7 +50,7 @@ export async function execute(
 
   const target = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
   if (!target) {
-    await interaction.editReply({ content: "❌ Could not find that user in this server." });
+    await interaction.editReply({ content: `${E.cross} Could not find that user in this server.` });
     return;
   }
 
@@ -68,20 +69,20 @@ export async function runMute(
 ): Promise<void> {
   const durationMs = parseDuration(durationStr);
   if (durationMs === null) {
-    await replyFn({ content: "❌ Invalid duration. Use formats like `30s`, `10m`, `2h`, `1d` (max 28d)." });
+    await replyFn({ content: `${E.cross} Invalid duration. Use formats like \`30s\`, \`10m\`, \`2h\`, \`1d\` (max 28d).` });
     return;
   }
 
   const maxMs = 28 * 24 * 60 * 60 * 1000;
   if (durationMs > maxMs) {
-    await replyFn({ content: "❌ Maximum timeout duration is **28 days**." });
+    await replyFn({ content: `${E.cross} Maximum timeout duration is **28 days**.` });
     return;
   }
 
   try {
     await target.timeout(durationMs, reason);
   } catch {
-    await replyFn({ content: "❌ Failed to mute the user. Ensure the bot has the **Moderate Members** permission." });
+    await replyFn({ content: `${E.cross} Failed to mute the user. Ensure the bot has the **Moderate Members** permission.` });
     return;
   }
 
@@ -104,7 +105,7 @@ export async function runMute(
 
   await replyFn(
     buildActionContainer(
-      "🔇 User Muted",
+      `${E.bell} User Muted`,
       [`**${target.user.tag}** has been muted for **${durationStr}**.`, `Reason: ${reason}`],
       `By ${executor.user.tag}`,
     ),

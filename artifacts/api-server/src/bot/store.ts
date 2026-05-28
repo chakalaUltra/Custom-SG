@@ -27,7 +27,9 @@ export type ModActionType =
   | "mute"
   | "unmute"
   | "verify"
-  | "mainer";
+  | "mainer"
+  | "role"
+  | "rank";
 
 export interface ModAction {
   id: string;
@@ -41,14 +43,25 @@ export interface ModAction {
   timestamp: number;
 }
 
+export interface UserRank {
+  stage: number;
+  midstage: string;
+  extrastage: string;
+}
+
+export interface RankRolesConfig {
+  stages: Partial<Record<string, string>>;
+  midstages: Partial<Record<string, string>>;
+  extrastages: Partial<Record<string, string>>;
+}
+
 const verifyRolesStore = new Map<string, VerifyRolesConfig>();
 const permStore = new Map<string, Set<string>>();
-// key: `guildId:userId` → inner map: warnId → Warning
 const warnStore = new Map<string, Map<string, Warning>>();
-// key: guildId → ModAction[]
 const modActionStore = new Map<string, ModAction[]>();
-// key: guildId → channelId
 const modLogsChannelStore = new Map<string, string>();
+const userRankStore = new Map<string, UserRank>();
+const rankRolesStore = new Map<string, RankRolesConfig>();
 
 let storeChannel: GuildTextBasedChannel | null = null;
 let discordClient: Client | null = null;
@@ -113,7 +126,6 @@ function applyEntry(key: string, value: unknown): void {
       permStore.get(storeKey)!.delete(command);
     }
   } else if (key.startsWith("warn:")) {
-    // warn:guildId:userId:warnId
     const parts = key.split(":");
     if (parts.length < 4) return;
     const guildId = parts[1];
@@ -127,7 +139,6 @@ function applyEntry(key: string, value: unknown): void {
       warnStore.get(userKey)!.set(warnId, value as Warning);
     }
   } else if (key.startsWith("modaction:")) {
-    // modaction:guildId:actionId
     const parts = key.split(":");
     if (parts.length < 3) return;
     const guildId = parts[1];
@@ -136,6 +147,20 @@ function applyEntry(key: string, value: unknown): void {
   } else if (key.startsWith("modlogs:")) {
     const guildId = key.slice("modlogs:".length);
     modLogsChannelStore.set(guildId, (value as { channelId: string }).channelId);
+  } else if (key.startsWith("rank:")) {
+    const parts = key.split(":");
+    if (parts.length < 3) return;
+    const guildId = parts[1];
+    const userId = parts[2];
+    const userKey = `${guildId}:${userId}`;
+    if (value === null) {
+      userRankStore.delete(userKey);
+    } else {
+      userRankStore.set(userKey, value as UserRank);
+    }
+  } else if (key.startsWith("rank-roles:")) {
+    const guildId = key.slice("rank-roles:".length);
+    rankRolesStore.set(guildId, value as RankRolesConfig);
   }
 }
 
@@ -143,7 +168,7 @@ export function generateId(): string {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
-// ─── Verify Roles ───────────────────────────────────────────────────────────
+// ─── Verify Roles ────────────────────────────────────────────────────────────
 
 export function getVerifyRoles(guildId: string): VerifyRolesConfig | undefined {
   return verifyRolesStore.get(guildId);
@@ -182,7 +207,7 @@ export async function saveCommandPerm(
   await writeToChannel(`perm:${guildId}:${roleId}:${command}`, true);
 }
 
-// ─── Warnings ────────────────────────────────────────────────────────────────
+// ─── Warnings ─────────────────────────────────────────────────────────────────
 
 export function getWarnings(guildId: string, userId: string): Warning[] {
   return [...(warnStore.get(`${guildId}:${userId}`)?.values() ?? [])].sort(
@@ -210,7 +235,7 @@ export async function removeWarning(
   await writeToChannel(`warn:${guildId}:${userId}:${warnId}`, null);
 }
 
-// ─── Mod Actions (for stats) ─────────────────────────────────────────────────
+// ─── Mod Actions ──────────────────────────────────────────────────────────────
 
 export async function saveModAction(
   guildId: string,
@@ -228,6 +253,16 @@ export function getModActionsByModerator(
   return (modActionStore.get(guildId) ?? []).filter(
     (a) => a.moderatorId === moderatorId,
   );
+}
+
+export function getAllModActions(guildId: string): ModAction[] {
+  return modActionStore.get(guildId) ?? [];
+}
+
+export function getVerifierForUser(guildId: string, userId: string): ModAction | undefined {
+  return (modActionStore.get(guildId) ?? [])
+    .filter((a) => a.type === "verify" && a.targetId === userId)
+    .sort((a, b) => b.timestamp - a.timestamp)[0];
 }
 
 // ─── Mod Logs Channel ─────────────────────────────────────────────────────────
@@ -257,6 +292,35 @@ export async function sendModLog(
   } catch (err) {
     logger.warn({ err, guildId, channelId }, "Failed to send mod log");
   }
+}
+
+// ─── User Ranks ──────────────────────────────────────────────────────────────
+
+export function getUserRank(guildId: string, userId: string): UserRank | undefined {
+  return userRankStore.get(`${guildId}:${userId}`);
+}
+
+export async function saveUserRank(
+  guildId: string,
+  userId: string,
+  rank: UserRank,
+): Promise<void> {
+  userRankStore.set(`${guildId}:${userId}`, rank);
+  await writeToChannel(`rank:${guildId}:${userId}`, rank);
+}
+
+// ─── Rank Roles ──────────────────────────────────────────────────────────────
+
+export function getRankRoles(guildId: string): RankRolesConfig | undefined {
+  return rankRolesStore.get(guildId);
+}
+
+export async function saveRankRoles(
+  guildId: string,
+  config: RankRolesConfig,
+): Promise<void> {
+  rankRolesStore.set(guildId, config);
+  await writeToChannel(`rank-roles:${guildId}`, config);
 }
 
 // ─── Internal ─────────────────────────────────────────────────────────────────

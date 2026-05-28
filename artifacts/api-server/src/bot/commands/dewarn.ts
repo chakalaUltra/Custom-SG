@@ -15,6 +15,7 @@ import { getWarnings, removeWarning, saveModAction, generateId } from "../store.
 import { buildActionContainer } from "../components.js";
 import { canRunCommand } from "../permissions.js";
 import { dispatchModLog } from "../modlog.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "dewarn";
 
@@ -30,12 +31,12 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} You do not have permission to use this command.`, ephemeral: true });
     return;
   }
 
@@ -61,7 +62,7 @@ export async function sendDewarnMenu(
       flags: MessageFlags.IsComponentsV2,
       components: [
         new ContainerBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`## 📋 No Warnings\n**${targetTag}** has no warnings to remove.`),
+          new TextDisplayBuilder().setContent(`## ${E.check} No Warnings\n**${targetTag}** has no warnings to remove.`),
         ),
       ],
       allowedMentions: { parse: [], repliedUser: false },
@@ -87,7 +88,7 @@ export async function sendDewarnMenu(
   const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu);
 
   await replyFn({
-    content: `Select a warning to remove from **${targetTag}**:`,
+    content: `${E.trash} Select a warning to remove from **${targetTag}**:`,
     components: [row],
     allowedMentions: { parse: [], repliedUser: false },
   });
@@ -130,14 +131,8 @@ export async function handleDewarnSelect(
     reason: warning ? `Removed: "${warning.reason}"` : undefined,
   });
 
-  const payload = buildActionContainer(
-    "🗑️ Warning Removed",
-    [`Warning removed from **${targetTag}**.`],
-    `By ${executor.user.tag}`,
-  );
-
   await interaction.update({
-    content: `✅ Warning removed from **${targetTag}**.`,
+    content: `${E.check} Warning removed from **${targetTag}**.`,
     components: [],
     embeds: [],
   });

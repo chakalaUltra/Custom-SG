@@ -8,6 +8,7 @@ import { saveModAction, generateId } from "../store.js";
 import { buildActionContainer } from "../components.js";
 import { canRunCommand } from "../permissions.js";
 import { dispatchModLog } from "../modlog.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "ban";
 
@@ -26,12 +27,12 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} You do not have permission to use this command.`, ephemeral: true });
     return;
   }
 
@@ -59,7 +60,7 @@ export async function runBan(
   try {
     await executor.guild.members.ban(targetId, { reason, deleteMessageSeconds: 0 });
   } catch {
-    await replyFn({ content: "❌ Failed to ban. Ensure the bot has the **Ban Members** permission." });
+    await replyFn({ content: `${E.cross} Failed to ban. Ensure the bot has the **Ban Members** permission.` });
     return;
   }
 
@@ -78,7 +79,7 @@ export async function runBan(
 
   await replyFn(
     buildActionContainer(
-      "🔨 User Banned",
+      `${E.cross} User Banned`,
       [`**${targetTag}** has been banned.`, `Reason: ${reason}`],
       `By ${executor.user.tag}`,
     ),

@@ -3,12 +3,12 @@ import {
   ChatInputCommandInteraction,
   PermissionFlagsBits,
   GuildMember,
-  Message,
 } from "discord.js";
 import { saveModAction, generateId } from "../store.js";
 import { buildActionContainer } from "../components.js";
 import { canRunCommand } from "../permissions.js";
 import { dispatchModLog } from "../modlog.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "unban";
 
@@ -30,12 +30,12 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} You do not have permission to use this command.`, ephemeral: true });
     return;
   }
 
@@ -57,7 +57,7 @@ export async function runUnban(
   client: { users: { fetch: (id: string) => Promise<{ tag: string }> } },
 ): Promise<void> {
   if (!/^\d+$/.test(userId)) {
-    await replyFn({ content: "❌ Please provide a valid numeric user ID." });
+    await replyFn({ content: `${E.cross} Please provide a valid numeric user ID.` });
     return;
   }
 
@@ -70,7 +70,7 @@ export async function runUnban(
   try {
     await executor.guild.bans.remove(userId, reason);
   } catch {
-    await replyFn({ content: "❌ Could not unban — the user may not be banned, or the bot lacks **Ban Members** permission." });
+    await replyFn({ content: `${E.cross} Could not unban — the user may not be banned, or the bot lacks **Ban Members** permission.` });
     return;
   }
 
@@ -89,7 +89,7 @@ export async function runUnban(
 
   await replyFn(
     buildActionContainer(
-      "🔓 User Unbanned",
+      `${E.check} User Unbanned`,
       [`**${targetTag}** has been unbanned.`],
       `By ${executor.user.tag}`,
     ),

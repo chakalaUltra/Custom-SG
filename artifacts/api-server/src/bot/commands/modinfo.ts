@@ -10,31 +10,36 @@ import {
 } from "discord.js";
 import { getModActionsByModerator, type ModActionType } from "../store.js";
 import { canRunCommand } from "../permissions.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "modinfo";
 
 const ACTION_LABELS: Record<ModActionType, string> = {
-  warn: "Warns",
-  dewarn: "Dewarns",
-  kick: "Kicks",
-  ban: "Bans",
-  unban: "Unbans",
-  mute: "Mutes",
-  unmute: "Unmutes",
-  verify: "Verifications",
-  mainer: "Mainers",
+  warn:    "Warns",
+  dewarn:  "Dewarns",
+  kick:    "Kicks",
+  ban:     "Bans",
+  unban:   "Unbans",
+  mute:    "Mutes",
+  unmute:  "Unmutes",
+  verify:  "Verifications",
+  mainer:  "Mainers",
+  role:    "Role Assignments",
+  rank:    "Rank Assignments",
 };
 
 const ACTION_EMOJI: Record<ModActionType, string> = {
-  warn: "⚠️",
-  dewarn: "🗑️",
-  kick: "👢",
-  ban: "🔨",
-  unban: "🔓",
-  mute: "🔇",
-  unmute: "🔊",
-  verify: "✅",
-  mainer: "⭐",
+  warn:    E.info,
+  dewarn:  E.trash,
+  kick:    E.left,
+  ban:     E.cross,
+  unban:   E.check,
+  mute:    E.bell,
+  unmute:  E.bell,
+  verify:  E.shield,
+  mainer:  E.star,
+  role:    E.sliders,
+  rank:    E.chart,
 };
 
 export const data = new SlashCommandBuilder()
@@ -49,12 +54,12 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} You do not have permission to use this command.`, ephemeral: true });
     return;
   }
 
@@ -81,12 +86,12 @@ export async function runModinfo(
   const total = actions.length;
 
   const types: ModActionType[] = [
-    "verify", "mainer", "warn", "dewarn", "mute", "unmute", "kick", "ban", "unban",
+    "verify", "mainer", "warn", "dewarn", "mute", "unmute", "kick", "ban", "unban", "role", "rank",
   ];
 
   const container = new ContainerBuilder();
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`## 📊 Mod Stats — ${moderatorTag}`),
+    new TextDisplayBuilder().setContent(`## ${E.chart} Mod Stats — ${moderatorTag}`),
   );
   container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 

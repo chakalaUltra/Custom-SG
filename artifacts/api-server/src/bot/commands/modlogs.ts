@@ -9,6 +9,7 @@ import {
 } from "discord.js";
 import { saveModLogsChannel } from "../store.js";
 import { buildActionContainer } from "../components.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "modlogs";
 
@@ -28,13 +29,13 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
 
   const executor = interaction.member as GuildMember;
   if (!executor.permissions.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({ content: "❌ Only administrators can use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Only administrators can use this command.`, ephemeral: true });
     return;
   }
 
@@ -43,7 +44,7 @@ export async function execute(
 
   await interaction.reply(
     buildActionContainer(
-      "📋 Mod Logs Configured",
+      `${E.message} Mod Logs Configured`,
       [`Moderation logs will now be sent to <#${channel.id}>.`],
       `Set by ${executor.user.tag}`,
     ),
@@ -58,26 +59,26 @@ export async function runModlogs(
   if (!message.guild) return;
 
   if (!executor.permissions.has(PermissionFlagsBits.Administrator)) {
-    await message.reply("❌ Only administrators can use this command.");
+    await message.reply(`${E.cross} Only administrators can use this command.`);
     return;
   }
 
   const channelArg = args[0];
   if (!channelArg) {
-    await message.reply("❌ Usage: `$modlogs #channel` or `$modlogs CHANNEL_ID`");
+    await message.reply(`${E.cross} Usage: \`$modlogs #channel\` or \`$modlogs CHANNEL_ID\``);
     return;
   }
 
   const channelIdMatch = channelArg.match(/^<#(\d+)>$/) ?? channelArg.match(/^(\d+)$/);
   if (!channelIdMatch) {
-    await message.reply("❌ Please mention a channel or provide a channel ID.");
+    await message.reply(`${E.cross} Please mention a channel or provide a channel ID.`);
     return;
   }
 
   const channelId = channelIdMatch[1];
   const ch = await message.guild.channels.fetch(channelId).catch(() => null);
   if (!ch || ch.type !== ChannelType.GuildText) {
-    await message.reply("❌ Could not find a text channel with that ID.");
+    await message.reply(`${E.cross} Could not find a text channel with that ID.`);
     return;
   }
 
@@ -85,7 +86,7 @@ export async function runModlogs(
 
   await (message.channel as GuildTextBasedChannel).send(
     buildActionContainer(
-      "📋 Mod Logs Configured",
+      `${E.message} Mod Logs Configured`,
       [`Moderation logs will now be sent to <#${channelId}>.`],
       `Set by ${executor.user.tag}`,
     ),

@@ -8,6 +8,7 @@ import { addWarning, saveModAction, generateId } from "../store.js";
 import { buildActionContainer } from "../components.js";
 import { canRunCommand } from "../permissions.js";
 import { dispatchModLog } from "../modlog.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "warn";
 
@@ -26,12 +27,12 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} You do not have permission to use this command.`, ephemeral: true });
     return;
   }
 
@@ -76,7 +77,7 @@ export async function runWarn(
 
   await replyFn(
     buildActionContainer(
-      "⚠️ Warning Issued",
+      `${E.info} Warning Issued`,
       [`**${targetTag}** has been warned.`, `Reason: ${reason}`],
       `By ${executor.user.tag}`,
     ),

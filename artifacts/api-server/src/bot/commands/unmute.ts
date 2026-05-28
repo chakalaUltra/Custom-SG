@@ -8,6 +8,7 @@ import { saveModAction, generateId } from "../store.js";
 import { buildActionContainer } from "../components.js";
 import { canRunCommand } from "../permissions.js";
 import { dispatchModLog } from "../modlog.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "unmute";
 
@@ -26,12 +27,12 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} You do not have permission to use this command.`, ephemeral: true });
     return;
   }
 
@@ -42,7 +43,7 @@ export async function execute(
 
   const target = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
   if (!target) {
-    await interaction.editReply({ content: "❌ Could not find that user in this server." });
+    await interaction.editReply({ content: `${E.cross} Could not find that user in this server.` });
     return;
   }
 
@@ -59,14 +60,14 @@ export async function runUnmute(
   replyFn: (payload: object) => Promise<void>,
 ): Promise<void> {
   if (!target.isCommunicationDisabled()) {
-    await replyFn({ content: `❌ **${target.user.tag}** is not currently muted.` });
+    await replyFn({ content: `${E.cross} **${target.user.tag}** is not currently muted.` });
     return;
   }
 
   try {
     await target.timeout(null, reason);
   } catch {
-    await replyFn({ content: "❌ Failed to unmute the user. Ensure the bot has the **Moderate Members** permission." });
+    await replyFn({ content: `${E.cross} Failed to unmute the user. Ensure the bot has the **Moderate Members** permission.` });
     return;
   }
 
@@ -85,7 +86,7 @@ export async function runUnmute(
 
   await replyFn(
     buildActionContainer(
-      "🔊 User Unmuted",
+      `${E.bell} User Unmuted`,
       [`**${target.user.tag}** has been unmuted.`],
       `By ${executor.user.tag}`,
     ),

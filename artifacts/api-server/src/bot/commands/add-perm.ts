@@ -8,6 +8,7 @@ import {
 } from "discord.js";
 import { saveCommandPerm } from "../store.js";
 import { buildActionContainer } from "../components.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "add-perm";
 
@@ -26,6 +27,11 @@ const GRANTABLE_COMMANDS = [
   "unban",
   "kick",
   "modinfo",
+  "role",
+  "rank",
+  "rank-roles",
+  "leaderboard",
+  "userinfo",
 ];
 
 export const data = new SlashCommandBuilder()
@@ -52,13 +58,13 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
 
   const executor = interaction.member as GuildMember;
   if (!executor.permissions.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({ content: "❌ Only administrators can use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Only administrators can use this command.`, ephemeral: true });
     return;
   }
 
@@ -67,7 +73,7 @@ export async function execute(
 
   if (ADMIN_ONLY_COMMANDS.includes(command)) {
     await interaction.reply({
-      content: `❌ \`${command}\` is strictly admin-only and cannot be granted to a role.`,
+      content: `${E.cross} \`${command}\` is strictly admin-only and cannot be granted to a role.`,
       ephemeral: true,
     });
     return;
@@ -77,7 +83,7 @@ export async function execute(
 
   await interaction.reply(
     buildActionContainer(
-      "🔐 Permission Granted",
+      `${E.plus} Permission Granted`,
       [`<@&${role.id}> can now use **/${command}**.`],
       `By ${executor.user.tag}`,
     ),
@@ -92,12 +98,12 @@ export async function runAddPerm(
   if (!message.guild) return;
 
   if (!executor.permissions.has(PermissionFlagsBits.Administrator)) {
-    await message.reply("❌ Only administrators can use this command.");
+    await message.reply(`${E.cross} Only administrators can use this command.`);
     return;
   }
 
   if (args.length < 2) {
-    await message.reply(`❌ Usage: \`$add-perm @role <command>\`\nGrantable commands: ${GRANTABLE_COMMANDS.join(", ")}`);
+    await message.reply(`${E.cross} Usage: \`$add-perm @role <command>\`\nGrantable commands: ${GRANTABLE_COMMANDS.join(", ")}`);
     return;
   }
 
@@ -105,25 +111,25 @@ export async function runAddPerm(
   const command = args[1].toLowerCase();
 
   if (ADMIN_ONLY_COMMANDS.includes(command)) {
-    await message.reply(`❌ \`${command}\` is strictly admin-only and cannot be granted to a role.`);
+    await message.reply(`${E.cross} \`${command}\` is strictly admin-only and cannot be granted to a role.`);
     return;
   }
 
   if (!GRANTABLE_COMMANDS.includes(command)) {
-    await message.reply(`❌ Unknown command \`${command}\`. Grantable commands: ${GRANTABLE_COMMANDS.join(", ")}`);
+    await message.reply(`${E.cross} Unknown command \`${command}\`. Grantable commands: ${GRANTABLE_COMMANDS.join(", ")}`);
     return;
   }
 
   const roleIdMatch = roleResolvable.match(/^<@&(\d+)>$/) ?? roleResolvable.match(/^(\d+)$/);
   if (!roleIdMatch) {
-    await message.reply("❌ Please mention a role or provide a role ID.");
+    await message.reply(`${E.cross} Please mention a role or provide a role ID.`);
     return;
   }
 
   const roleId = roleIdMatch[1];
   const role = await message.guild.roles.fetch(roleId).catch(() => null);
   if (!role) {
-    await message.reply("❌ Could not find that role.");
+    await message.reply(`${E.cross} Could not find that role.`);
     return;
   }
 
@@ -131,7 +137,7 @@ export async function runAddPerm(
 
   await (message.channel as GuildTextBasedChannel).send(
     buildActionContainer(
-      "🔐 Permission Granted",
+      `${E.plus} Permission Granted`,
       [`<@&${role.id}> can now use **/${command}**.`],
       `By ${executor.user.tag}`,
     ),

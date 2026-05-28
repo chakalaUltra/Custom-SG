@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 import { getWarnings } from "../store.js";
 import { canRunCommand } from "../permissions.js";
+import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "warnings";
 
@@ -25,12 +26,12 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
+    await interaction.reply({ content: `${E.cross} You do not have permission to use this command.`, ephemeral: true });
     return;
   }
 
@@ -54,7 +55,7 @@ export async function runWarnings(
       flags: MessageFlags.IsComponentsV2,
       components: [
         new ContainerBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`## 📋 Warnings for ${targetTag}\nNo warnings on record.`),
+          new TextDisplayBuilder().setContent(`## ${E.check} Warnings for ${targetTag}\nNo warnings on record.`),
         ),
       ],
       allowedMentions: { parse: [], repliedUser: false },
@@ -64,7 +65,7 @@ export async function runWarnings(
 
   const container = new ContainerBuilder();
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`## ⚠️ Warnings for ${targetTag}`),
+    new TextDisplayBuilder().setContent(`## ${E.info} Warnings for ${targetTag}`),
   );
   container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 

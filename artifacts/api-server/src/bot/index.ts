@@ -26,6 +26,11 @@ import * as unbanCmd from "./commands/unban.js";
 import * as kickCmd from "./commands/kick.js";
 import * as modinfoCmd from "./commands/modinfo.js";
 import * as modlogsCmd from "./commands/modlogs.js";
+import * as roleCmd from "./commands/role.js";
+import * as leaderboardCmd from "./commands/leaderboard.js";
+import * as rankCmd from "./commands/rank.js";
+import * as rankRolesCmd from "./commands/rank-roles.js";
+import * as userinfoCmd from "./commands/userinfo.js";
 
 interface Command {
   data: { toJSON: () => unknown };
@@ -47,6 +52,11 @@ commands.set("unban", unbanCmd);
 commands.set("kick", kickCmd);
 commands.set("modinfo", modinfoCmd);
 commands.set("modlogs", modlogsCmd);
+commands.set("role", roleCmd);
+commands.set("leaderboard", leaderboardCmd);
+commands.set("rank", rankCmd);
+commands.set("rank-roles", rankRolesCmd);
+commands.set("userinfo", userinfoCmd);
 
 export function startBot(): void {
   const token = process.env["DISCORD_BOT_TOKEN"];
@@ -79,7 +89,7 @@ export function startBot(): void {
         await command.execute(interaction as ChatInputCommandInteraction);
       } catch (err) {
         logger.error({ err, command: interaction.commandName }, "Error executing slash command");
-        const msg = { content: "❌ An error occurred while running that command.", ephemeral: true };
+        const msg = { content: "An error occurred while running that command.", ephemeral: true };
         if (interaction.deferred || interaction.replied) {
           await interaction.editReply(msg).catch(() => {});
         } else {
@@ -96,7 +106,7 @@ export function startBot(): void {
         } catch (err) {
           logger.error({ err }, "Error handling dewarn select menu");
           await (interaction as StringSelectMenuInteraction).update({
-            content: "❌ An error occurred while removing the warning.",
+            content: "An error occurred while removing the warning.",
             components: [],
           }).catch(() => {});
         }
