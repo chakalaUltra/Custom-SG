@@ -50,56 +50,113 @@ export async function execute(
   const isMainer = verifyConfig ? target.roles.cache.has(verifyConfig.mainerRoleId) : false;
   const isVerified = verifyConfig ? target.roles.cache.has(verifyConfig.verifiedRoleId) : false;
 
-  let status: string;
+  let statusEmoji: string;
+  let statusLabel: string;
+  let embedColor: number;
+
   if (isMainer) {
-    status = `${E.star} Mainer`;
+    statusEmoji = E.star;
+    statusLabel = "Mainer";
+    embedColor = 0xffd700;
   } else if (isVerified) {
-    status = `${E.shield} Verified`;
+    statusEmoji = E.shield;
+    statusLabel = "Verified";
+    embedColor = 0x44cc88;
   } else {
-    status = `${E.question} Visitor`;
+    statusEmoji = E.question;
+    statusLabel = "Visitor";
+    embedColor = 0x7289da;
+  }
+
+  if (target.displayColor && target.displayColor !== 0) {
+    embedColor = target.displayColor;
   }
 
   const visibleRoles = [...target.roles.cache.values()]
     .filter((r) => r.id !== interaction.guild!.id)
     .sort((a, b) => b.position - a.position)
-    .slice(0, 15)
-    .map((r) => `<@&${r.id}>`)
-    .join(" ");
+    .slice(0, 10);
+
+  const rolesDisplay = visibleRoles.length > 0
+    ? visibleRoles.map((r) => `<@&${r.id}>`).join("  ")
+    : "*No roles*";
 
   const joinedAt = target.joinedAt
-    ? `<t:${Math.floor(target.joinedAt.getTime() / 1000)}:D>`
+    ? `<t:${Math.floor(target.joinedAt.getTime() / 1000)}:D>\n<t:${Math.floor(target.joinedAt.getTime() / 1000)}:R>`
     : "Unknown";
-  const createdAt = `<t:${Math.floor(fullUser.createdAt.getTime() / 1000)}:D>`;
+
+  const createdAt = `<t:${Math.floor(fullUser.createdAt.getTime() / 1000)}:D>\n<t:${Math.floor(fullUser.createdAt.getTime() / 1000)}:R>`;
 
   const rankStr = rank
     ? `Stage **${rank.stage}** · **${rank.midstage}** · **${rank.extrastage}**`
-    : "Not ranked";
+    : "*Not ranked*";
 
-  const verifiedBy = verifyAction
-    ? `${verifyAction.moderatorTag} (<t:${Math.floor(verifyAction.timestamp / 1000)}:R>)`
-    : "Not verified";
+  const verifiedByStr = verifyAction
+    ? `**${verifyAction.moderatorTag}**\n<t:${Math.floor(verifyAction.timestamp / 1000)}:R>`
+    : "*Not verified*";
+
+  const displayName = target.nickname ?? fullUser.username;
+  const tag = fullUser.tag;
+
+  const descLines = [
+    `### ${statusEmoji} ${displayName}`,
+    `\`${tag}\` · <@${target.id}>`,
+    ``,
+    `${E.chart} **Rank** — ${rankStr}`,
+  ];
 
   const embed = new EmbedBuilder()
-    .setColor(target.displayColor || 0x7289da)
-    .setAuthor({
-      name: fullUser.tag,
-      iconURL: fullUser.displayAvatarURL({ size: 128 }),
-    })
+    .setColor(embedColor)
+    .setDescription(descLines.join("\n"))
     .setThumbnail(fullUser.displayAvatarURL({ size: 256 }))
     .addFields(
-      { name: `${E.userConfig} Status`, value: status, inline: true },
-      { name: `${E.chart} Rank`, value: rankStr, inline: true },
-      { name: `${E.shield} Verified By`, value: verifiedBy, inline: false },
-      { name: `${E.save} Joined Server`, value: joinedAt, inline: true },
-      { name: `${E.link} Account Created`, value: createdAt, inline: true },
-      { name: `${E.sliders} Roles`, value: visibleRoles || "None", inline: false },
+      {
+        name: `${E.shield}  Status`,
+        value: `**${statusLabel}**`,
+        inline: true,
+      },
+      {
+        name: `${E.shield}  Verified By`,
+        value: verifiedByStr,
+        inline: true,
+      },
+      {
+        name: "\u200b",
+        value: "\u200b",
+        inline: true,
+      },
+      {
+        name: `${E.save}  Joined Server`,
+        value: joinedAt,
+        inline: true,
+      },
+      {
+        name: `${E.link}  Account Created`,
+        value: createdAt,
+        inline: true,
+      },
+      {
+        name: "\u200b",
+        value: "\u200b",
+        inline: true,
+      },
+      {
+        name: `${E.sliders}  Roles  (${visibleRoles.length})`,
+        value: rolesDisplay,
+        inline: false,
+      },
     )
-    .setFooter({ text: `ID: ${target.id}` })
+    .setFooter({
+      text: `ID: ${target.id}  •  Requested by ${executor.user.tag}`,
+      iconURL: executor.user.displayAvatarURL({ size: 32 }),
+    })
     .setTimestamp();
 
   const bannerURL = fullUser.bannerURL({ size: 1024 });
   if (bannerURL) {
     embed.setImage(bannerURL);
+  } else {
+    embed.setImage(fullUser.displayAvatarURL({ size: 1024, forceStatic: false }));
   }
 
   await interaction.editReply({ embeds: [embed] });
