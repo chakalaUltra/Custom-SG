@@ -3,6 +3,16 @@ import { canRunCommand } from "./permissions.js";
 import { runVerify } from "./commands/verify.js";
 import { runMainer } from "./commands/mainer.js";
 import { runAddPerm } from "./commands/add-perm.js";
+import { runWarn } from "./commands/warn.js";
+import { runWarnings } from "./commands/warnings.js";
+import { sendDewarnMenu } from "./commands/dewarn.js";
+import { runMute } from "./commands/mute.js";
+import { runUnmute } from "./commands/unmute.js";
+import { runBan } from "./commands/ban.js";
+import { runUnban } from "./commands/unban.js";
+import { runKick } from "./commands/kick.js";
+import { runModinfo } from "./commands/modinfo.js";
+import { runModlogs } from "./commands/modlogs.js";
 import { logger } from "../lib/logger.js";
 
 const PREFIX = "$";
@@ -25,22 +35,24 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
   const member = message.member;
   if (!member) return;
 
-  logger.info({ commandName, args, userId: message.author.id }, "Prefix command received");
+  logger.info({ commandName, userId: message.author.id }, "Prefix command received");
+
+  const send = async (payload: object) => {
+    await (message.channel as GuildTextBasedChannel).send(
+      payload as Parameters<GuildTextBasedChannel["send"]>[0],
+    );
+  };
 
   switch (commandName) {
+    // ─── Verification ───────────────────────────────────────────────────────
     case "verify": {
       if (!canRunCommand(member, "verify")) {
         await message.reply("❌ You do not have permission to use this command.");
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) {
-        await message.reply("❌ Usage: `$verify @user` or `$verify USER_ID`");
-        return;
-      }
-      await runVerify(target, member, async (payload) => {
-        await (message.channel as GuildTextBasedChannel).send(payload as Parameters<GuildTextBasedChannel["send"]>[0]);
-      });
+      if (!target) { await message.reply("❌ Usage: `$verify @user`"); return; }
+      await runVerify(target, member, send);
       break;
     }
 
@@ -50,18 +62,139 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) {
-        await message.reply("❌ Usage: `$mainer @user` or `$mainer USER_ID`");
-        return;
-      }
-      await runMainer(target, member, async (payload) => {
-        await (message.channel as GuildTextBasedChannel).send(payload as Parameters<GuildTextBasedChannel["send"]>[0]);
-      });
+      if (!target) { await message.reply("❌ Usage: `$mainer @user`"); return; }
+      await runMainer(target, member, send);
       break;
     }
 
     case "add-perm": {
       await runAddPerm(message, member, args);
+      break;
+    }
+
+    // ─── Warnings ───────────────────────────────────────────────────────────
+    case "warn": {
+      if (!canRunCommand(member, "warn")) {
+        await message.reply("❌ You do not have permission to use this command.");
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply("❌ Usage: `$warn @user <reason>`"); return; }
+      const reason = args.slice(1).join(" ");
+      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      await runWarn(message.guild.id, target.id, target.user.tag, member, reason, send);
+      break;
+    }
+
+    case "warnings": {
+      if (!canRunCommand(member, "warnings")) {
+        await message.reply("❌ You do not have permission to use this command.");
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply("❌ Usage: `$warnings @user`"); return; }
+      await runWarnings(message.guild.id, target.id, target.user.tag, send);
+      break;
+    }
+
+    case "dewarn": {
+      if (!canRunCommand(member, "dewarn")) {
+        await message.reply("❌ You do not have permission to use this command.");
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply("❌ Usage: `$dewarn @user`"); return; }
+      await sendDewarnMenu(message.guild.id, target.id, target.user.tag, send);
+      break;
+    }
+
+    // ─── Mod Actions ────────────────────────────────────────────────────────
+    case "mute": {
+      if (!canRunCommand(member, "mute")) {
+        await message.reply("❌ You do not have permission to use this command.");
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply("❌ Usage: `$mute @user <duration> <reason>`"); return; }
+      const duration = args[1];
+      if (!duration) { await message.reply("❌ Please provide a duration (e.g. `10m`, `2h`, `1d`)."); return; }
+      const reason = args.slice(2).join(" ");
+      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      await runMute(message.guild.id, target, member, duration, reason, send);
+      break;
+    }
+
+    case "unmute": {
+      if (!canRunCommand(member, "unmute")) {
+        await message.reply("❌ You do not have permission to use this command.");
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply("❌ Usage: `$unmute @user <reason>`"); return; }
+      const reason = args.slice(1).join(" ");
+      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      await runUnmute(message.guild.id, target, member, reason, send);
+      break;
+    }
+
+    case "ban": {
+      if (!canRunCommand(member, "ban")) {
+        await message.reply("❌ You do not have permission to use this command.");
+        return;
+      }
+      const userArg = args[0];
+      if (!userArg) { await message.reply("❌ Usage: `$ban @user <reason>`"); return; }
+      const reason = args.slice(1).join(" ");
+      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      const userId = extractUserId(userArg);
+      if (!userId) { await message.reply("❌ Please mention a user or provide a user ID."); return; }
+      const target = await message.guild.members.fetch(userId).catch(() => null);
+      await runBan(message.guild.id, userId, target?.user.tag ?? userId, target, member, reason, send);
+      break;
+    }
+
+    case "unban": {
+      if (!canRunCommand(member, "unban")) {
+        await message.reply("❌ You do not have permission to use this command.");
+        return;
+      }
+      const userArg = args[0];
+      if (!userArg) { await message.reply("❌ Usage: `$unban <userID> <reason>`"); return; }
+      const reason = args.slice(1).join(" ");
+      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      const userId = extractUserId(userArg);
+      if (!userId) { await message.reply("❌ Please provide a valid user ID."); return; }
+      await runUnban(message.guild.id, userId, member, reason, send, message.client);
+      break;
+    }
+
+    case "kick": {
+      if (!canRunCommand(member, "kick")) {
+        await message.reply("❌ You do not have permission to use this command.");
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply("❌ Usage: `$kick @user <reason>`"); return; }
+      const reason = args.slice(1).join(" ");
+      if (!reason) { await message.reply("❌ Please provide a reason."); return; }
+      await runKick(message.guild.id, target, member, reason, send);
+      break;
+    }
+
+    // ─── Info & Config ──────────────────────────────────────────────────────
+    case "modinfo": {
+      if (!canRunCommand(member, "modinfo")) {
+        await message.reply("❌ You do not have permission to use this command.");
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply("❌ Usage: `$modinfo @user`"); return; }
+      await runModinfo(message.guild.id, target.id, target.user.tag, send);
+      break;
+    }
+
+    case "modlogs": {
+      await runModlogs(message, member, args);
       break;
     }
 
@@ -75,10 +208,14 @@ async function resolveGuildMember(
   arg: string | undefined,
 ): Promise<GuildMember | null> {
   if (!arg || !message.guild) return null;
-
-  const mentionMatch = arg.match(/^<@!?(\d+)>$/);
-  const userId = mentionMatch ? mentionMatch[1] : /^\d+$/.test(arg) ? arg : null;
+  const userId = extractUserId(arg);
   if (!userId) return null;
-
   return message.guild.members.fetch(userId).catch(() => null);
+}
+
+function extractUserId(arg: string): string | null {
+  const mentionMatch = arg.match(/^<@!?(\d+)>$/);
+  if (mentionMatch) return mentionMatch[1];
+  if (/^\d+$/.test(arg)) return arg;
+  return null;
 }

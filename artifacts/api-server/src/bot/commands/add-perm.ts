@@ -11,13 +11,26 @@ import { buildActionContainer } from "../components.js";
 
 export const COMMAND_NAME = "add-perm";
 
-const GRANTABLE_COMMANDS = ["verify", "mainer", "verify-roles"];
+const ADMIN_ONLY_COMMANDS = ["add-perm", "modlogs"];
+
+const GRANTABLE_COMMANDS = [
+  "verify-roles",
+  "verify",
+  "mainer",
+  "warn",
+  "warnings",
+  "dewarn",
+  "mute",
+  "unmute",
+  "ban",
+  "unban",
+  "kick",
+  "modinfo",
+];
 
 export const data = new SlashCommandBuilder()
   .setName("add-perm")
-  .setDescription(
-    "Grant a role access to a specific bot command (admin only)",
-  )
+  .setDescription("Grant a role access to a specific bot command (admin only)")
   .addRoleOption((opt) =>
     opt
       .setName("role")
@@ -27,12 +40,10 @@ export const data = new SlashCommandBuilder()
   .addStringOption((opt) =>
     opt
       .setName("command")
-      .setDescription("The command name to grant (e.g. verify, mainer)")
+      .setDescription("The command name to grant")
       .setRequired(true)
       .addChoices(
-        { name: "verify", value: "verify" },
-        { name: "mainer", value: "mainer" },
-        { name: "verify-roles", value: "verify-roles" },
+        ...GRANTABLE_COMMANDS.map((c) => ({ name: c, value: c })),
       ),
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
@@ -41,36 +52,22 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({
-      content: "❌ This command can only be used in a server.",
-      ephemeral: true,
-    });
+    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
     return;
   }
 
   const executor = interaction.member as GuildMember;
   if (!executor.permissions.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({
-      content: "❌ Only administrators can use this command.",
-      ephemeral: true,
-    });
+    await interaction.reply({ content: "❌ Only administrators can use this command.", ephemeral: true });
     return;
   }
 
   const role = interaction.options.getRole("role", true);
   const command = interaction.options.getString("command", true);
 
-  if (command === COMMAND_NAME) {
+  if (ADMIN_ONLY_COMMANDS.includes(command)) {
     await interaction.reply({
-      content: `❌ The \`${COMMAND_NAME}\` command cannot be granted to a role. It is strictly admin-only.`,
-      ephemeral: true,
-    });
-    return;
-  }
-
-  if (!GRANTABLE_COMMANDS.includes(command)) {
-    await interaction.reply({
-      content: `❌ Unknown command \`${command}\`. Grantable commands: ${GRANTABLE_COMMANDS.join(", ")}`,
+      content: `❌ \`${command}\` is strictly admin-only and cannot be granted to a role.`,
       ephemeral: true,
     });
     return;
@@ -78,13 +75,13 @@ export async function execute(
 
   await saveCommandPerm(interaction.guild.id, role.id, command);
 
-  const payload = buildActionContainer(
-    "🔐 Permission Granted",
-    [`<@&${role.id}> can now use **/${command}**.`],
-    `By ${interaction.user.tag}`,
+  await interaction.reply(
+    buildActionContainer(
+      "🔐 Permission Granted",
+      [`<@&${role.id}> can now use **/${command}**.`],
+      `By ${executor.user.tag}`,
+    ),
   );
-
-  await interaction.reply(payload);
 }
 
 export async function runAddPerm(
@@ -95,42 +92,31 @@ export async function runAddPerm(
   if (!message.guild) return;
 
   if (!executor.permissions.has(PermissionFlagsBits.Administrator)) {
-    await message.reply(
-      "❌ Only administrators can use this command.",
-    );
+    await message.reply("❌ Only administrators can use this command.");
     return;
   }
 
   if (args.length < 2) {
-    await message.reply(
-      "❌ Usage: `$add-perm @role <command>`\nExample: `$add-perm @Moderator verify`",
-    );
+    await message.reply(`❌ Usage: \`$add-perm @role <command>\`\nGrantable commands: ${GRANTABLE_COMMANDS.join(", ")}`);
     return;
   }
 
   const roleResolvable = args[0];
   const command = args[1].toLowerCase();
 
-  if (command === COMMAND_NAME) {
-    await message.reply(
-      `❌ The \`${COMMAND_NAME}\` command cannot be granted to a role. It is strictly admin-only.`,
-    );
+  if (ADMIN_ONLY_COMMANDS.includes(command)) {
+    await message.reply(`❌ \`${command}\` is strictly admin-only and cannot be granted to a role.`);
     return;
   }
 
   if (!GRANTABLE_COMMANDS.includes(command)) {
-    await message.reply(
-      `❌ Unknown command \`${command}\`. Grantable commands: ${GRANTABLE_COMMANDS.join(", ")}`,
-    );
+    await message.reply(`❌ Unknown command \`${command}\`. Grantable commands: ${GRANTABLE_COMMANDS.join(", ")}`);
     return;
   }
 
-  const roleIdMatch = roleResolvable.match(/^<@&(\d+)>$/) ??
-    roleResolvable.match(/^(\d+)$/);
+  const roleIdMatch = roleResolvable.match(/^<@&(\d+)>$/) ?? roleResolvable.match(/^(\d+)$/);
   if (!roleIdMatch) {
-    await message.reply(
-      "❌ Please mention a role or provide a role ID. Example: `$add-perm @Moderator verify`",
-    );
+    await message.reply("❌ Please mention a role or provide a role ID.");
     return;
   }
 
@@ -143,11 +129,11 @@ export async function runAddPerm(
 
   await saveCommandPerm(message.guild.id, role.id, command);
 
-  const payload = buildActionContainer(
-    "🔐 Permission Granted",
-    [`<@&${role.id}> can now use **/${command}**.`],
-    `By ${executor.user.tag}`,
+  await (message.channel as GuildTextBasedChannel).send(
+    buildActionContainer(
+      "🔐 Permission Granted",
+      [`<@&${role.id}> can now use **/${command}**.`],
+      `By ${executor.user.tag}`,
+    ),
   );
-
-  await (message.channel as GuildTextBasedChannel).send(payload);
 }

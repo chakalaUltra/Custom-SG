@@ -10,12 +10,51 @@ export interface VerifyRolesConfig {
   mainerRoleId: string;
 }
 
+export interface Warning {
+  id: string;
+  reason: string;
+  moderatorId: string;
+  moderatorTag: string;
+  timestamp: number;
+}
+
+export type ModActionType =
+  | "warn"
+  | "dewarn"
+  | "kick"
+  | "ban"
+  | "unban"
+  | "mute"
+  | "unmute"
+  | "verify"
+  | "mainer";
+
+export interface ModAction {
+  id: string;
+  type: ModActionType;
+  moderatorId: string;
+  moderatorTag: string;
+  targetId: string;
+  targetTag: string;
+  reason?: string;
+  duration?: number;
+  timestamp: number;
+}
+
 const verifyRolesStore = new Map<string, VerifyRolesConfig>();
 const permStore = new Map<string, Set<string>>();
+// key: `guildId:userId` → inner map: warnId → Warning
+const warnStore = new Map<string, Map<string, Warning>>();
+// key: guildId → ModAction[]
+const modActionStore = new Map<string, ModAction[]>();
+// key: guildId → channelId
+const modLogsChannelStore = new Map<string, string>();
 
 let storeChannel: GuildTextBasedChannel | null = null;
+let discordClient: Client | null = null;
 
 export async function initStore(client: Client): Promise<void> {
+  discordClient = client;
   try {
     const ch = await client.channels.fetch(STORE_CHANNEL_ID);
     if (!ch || !ch.isTextBased() || ch.isDMBased()) {
@@ -43,7 +82,12 @@ export async function initStore(client: Client): Promise<void> {
     }
 
     logger.info(
-      { verifyRolesCount: verifyRolesStore.size, permCount: permStore.size },
+      {
+        verifyRolesCount: verifyRolesStore.size,
+        permCount: permStore.size,
+        warnUsers: warnStore.size,
+        modActions: [...modActionStore.values()].reduce((a, v) => a + v.length, 0),
+      },
       "Store initialized from Discord channel",
     );
   } catch (err) {
@@ -68,8 +112,38 @@ function applyEntry(key: string, value: unknown): void {
     } else {
       permStore.get(storeKey)!.delete(command);
     }
+  } else if (key.startsWith("warn:")) {
+    // warn:guildId:userId:warnId
+    const parts = key.split(":");
+    if (parts.length < 4) return;
+    const guildId = parts[1];
+    const userId = parts[2];
+    const warnId = parts[3];
+    const userKey = `${guildId}:${userId}`;
+    if (!warnStore.has(userKey)) warnStore.set(userKey, new Map());
+    if (value === null) {
+      warnStore.get(userKey)!.delete(warnId);
+    } else {
+      warnStore.get(userKey)!.set(warnId, value as Warning);
+    }
+  } else if (key.startsWith("modaction:")) {
+    // modaction:guildId:actionId
+    const parts = key.split(":");
+    if (parts.length < 3) return;
+    const guildId = parts[1];
+    if (!modActionStore.has(guildId)) modActionStore.set(guildId, []);
+    modActionStore.get(guildId)!.push(value as ModAction);
+  } else if (key.startsWith("modlogs:")) {
+    const guildId = key.slice("modlogs:".length);
+    modLogsChannelStore.set(guildId, (value as { channelId: string }).channelId);
   }
 }
+
+export function generateId(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+// ─── Verify Roles ───────────────────────────────────────────────────────────
 
 export function getVerifyRoles(guildId: string): VerifyRolesConfig | undefined {
   return verifyRolesStore.get(guildId);
@@ -82,6 +156,8 @@ export async function saveVerifyRoles(
   verifyRolesStore.set(guildId, config);
   await writeToChannel(`verify-roles:${guildId}`, config);
 }
+
+// ─── Permissions ─────────────────────────────────────────────────────────────
 
 export function hasRolePerm(
   guildId: string,
@@ -105,6 +181,85 @@ export async function saveCommandPerm(
   permStore.get(storeKey)!.add(command);
   await writeToChannel(`perm:${guildId}:${roleId}:${command}`, true);
 }
+
+// ─── Warnings ────────────────────────────────────────────────────────────────
+
+export function getWarnings(guildId: string, userId: string): Warning[] {
+  return [...(warnStore.get(`${guildId}:${userId}`)?.values() ?? [])].sort(
+    (a, b) => a.timestamp - b.timestamp,
+  );
+}
+
+export async function addWarning(
+  guildId: string,
+  userId: string,
+  warning: Warning,
+): Promise<void> {
+  const userKey = `${guildId}:${userId}`;
+  if (!warnStore.has(userKey)) warnStore.set(userKey, new Map());
+  warnStore.get(userKey)!.set(warning.id, warning);
+  await writeToChannel(`warn:${guildId}:${userId}:${warning.id}`, warning);
+}
+
+export async function removeWarning(
+  guildId: string,
+  userId: string,
+  warnId: string,
+): Promise<void> {
+  warnStore.get(`${guildId}:${userId}`)?.delete(warnId);
+  await writeToChannel(`warn:${guildId}:${userId}:${warnId}`, null);
+}
+
+// ─── Mod Actions (for stats) ─────────────────────────────────────────────────
+
+export async function saveModAction(
+  guildId: string,
+  action: ModAction,
+): Promise<void> {
+  if (!modActionStore.has(guildId)) modActionStore.set(guildId, []);
+  modActionStore.get(guildId)!.push(action);
+  await writeToChannel(`modaction:${guildId}:${action.id}`, action);
+}
+
+export function getModActionsByModerator(
+  guildId: string,
+  moderatorId: string,
+): ModAction[] {
+  return (modActionStore.get(guildId) ?? []).filter(
+    (a) => a.moderatorId === moderatorId,
+  );
+}
+
+// ─── Mod Logs Channel ─────────────────────────────────────────────────────────
+
+export function getModLogsChannelId(guildId: string): string | undefined {
+  return modLogsChannelStore.get(guildId);
+}
+
+export async function saveModLogsChannel(
+  guildId: string,
+  channelId: string,
+): Promise<void> {
+  modLogsChannelStore.set(guildId, channelId);
+  await writeToChannel(`modlogs:${guildId}`, { channelId });
+}
+
+export async function sendModLog(
+  guildId: string,
+  embed: object,
+): Promise<void> {
+  const channelId = modLogsChannelStore.get(guildId);
+  if (!channelId || !discordClient) return;
+  try {
+    const ch = await discordClient.channels.fetch(channelId);
+    if (!ch || !ch.isTextBased() || ch.isDMBased()) return;
+    await (ch as GuildTextBasedChannel).send({ embeds: [embed as never] });
+  } catch (err) {
+    logger.warn({ err, guildId, channelId }, "Failed to send mod log");
+  }
+}
+
+// ─── Internal ─────────────────────────────────────────────────────────────────
 
 async function writeToChannel(key: string, value: unknown): Promise<void> {
   if (!storeChannel) {

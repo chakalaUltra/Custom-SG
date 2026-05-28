@@ -4,9 +4,10 @@ import {
   PermissionFlagsBits,
   GuildMember,
 } from "discord.js";
-import { getVerifyRoles } from "../store.js";
+import { getVerifyRoles, saveModAction, generateId } from "../store.js";
 import { buildActionContainer } from "../components.js";
 import { canRunCommand } from "../permissions.js";
+import { dispatchModLog } from "../modlog.js";
 
 export const COMMAND_NAME = "verify";
 
@@ -22,19 +23,13 @@ export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guild) {
-    await interaction.reply({
-      content: "❌ This command can only be used in a server.",
-      ephemeral: true,
-    });
+    await interaction.reply({ content: "❌ Server only.", ephemeral: true });
     return;
   }
 
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({
-      content: "❌ You do not have permission to use this command.",
-      ephemeral: true,
-    });
+    await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
     return;
   }
 
@@ -42,21 +37,14 @@ export async function execute(
 
   const config = getVerifyRoles(interaction.guild.id);
   if (!config) {
-    await interaction.editReply({
-      content:
-        "❌ Verification roles are not configured yet. Use `/verify-roles` first.",
-    });
+    await interaction.editReply({ content: "❌ Verification roles are not configured yet. Use `/verify-roles` first." });
     return;
   }
 
   const targetUser = interaction.options.getUser("user", true);
-  const target = await interaction.guild.members
-    .fetch(targetUser.id)
-    .catch(() => null);
+  const target = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
   if (!target) {
-    await interaction.editReply({
-      content: "❌ Could not find that user in this server.",
-    });
+    await interaction.editReply({ content: "❌ Could not find that user in this server." });
     return;
   }
 
@@ -64,20 +52,28 @@ export async function execute(
     await target.roles.add(config.verifiedRoleId);
     await target.roles.remove(config.unverifiedRoleId).catch(() => {});
   } catch {
-    await interaction.editReply({
-      content:
-        "❌ Failed to modify roles. Ensure the bot has **Manage Roles** and its role is above the target roles.",
-    });
+    await interaction.editReply({ content: "❌ Failed to modify roles. Ensure the bot has **Manage Roles** and its role is above the target roles." });
     return;
   }
 
-  const payload = buildActionContainer(
-    "✅ User Verified",
-    [`**${target.user.tag}** has been verified.`],
-    `Verified by ${interaction.user.tag}`,
-  );
+  await saveModAction(interaction.guild.id, {
+    id: generateId(),
+    type: "verify",
+    moderatorId: executor.id,
+    moderatorTag: executor.user.tag,
+    targetId: target.id,
+    targetTag: target.user.tag,
+    timestamp: Date.now(),
+  });
+  await dispatchModLog(interaction.guild.id, "verify", target.user.tag, target.id, executor.user.tag);
 
-  await interaction.editReply(payload);
+  await interaction.editReply(
+    buildActionContainer(
+      "✅ User Verified",
+      [`**${target.user.tag}** has been verified.`],
+      `Verified by ${executor.user.tag}`,
+    ),
+  );
 }
 
 export async function runVerify(
@@ -87,10 +83,7 @@ export async function runVerify(
 ): Promise<void> {
   const config = getVerifyRoles(guildMember.guild.id);
   if (!config) {
-    await replyFn({
-      content:
-        "❌ Verification roles are not configured yet. Use `/verify-roles` first.",
-    });
+    await replyFn({ content: "❌ Verification roles are not configured yet. Use `/verify-roles` first." });
     return;
   }
 
@@ -98,18 +91,26 @@ export async function runVerify(
     await guildMember.roles.add(config.verifiedRoleId);
     await guildMember.roles.remove(config.unverifiedRoleId).catch(() => {});
   } catch {
-    await replyFn({
-      content:
-        "❌ Failed to modify roles. Ensure the bot has **Manage Roles** and its role is above the target roles.",
-    });
+    await replyFn({ content: "❌ Failed to modify roles. Ensure the bot has **Manage Roles** and its role is above the target roles." });
     return;
   }
 
-  const payload = buildActionContainer(
-    "✅ User Verified",
-    [`**${guildMember.user.tag}** has been verified.`],
-    `Verified by ${executor.user.tag}`,
-  );
+  await saveModAction(guildMember.guild.id, {
+    id: generateId(),
+    type: "verify",
+    moderatorId: executor.id,
+    moderatorTag: executor.user.tag,
+    targetId: guildMember.id,
+    targetTag: guildMember.user.tag,
+    timestamp: Date.now(),
+  });
+  await dispatchModLog(guildMember.guild.id, "verify", guildMember.user.tag, guildMember.id, executor.user.tag);
 
-  await replyFn(payload);
+  await replyFn(
+    buildActionContainer(
+      "✅ User Verified",
+      [`**${guildMember.user.tag}** has been verified.`],
+      `Verified by ${executor.user.tag}`,
+    ),
+  );
 }
