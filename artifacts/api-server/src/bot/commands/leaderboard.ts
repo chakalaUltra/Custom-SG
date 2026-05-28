@@ -35,8 +35,16 @@ export async function execute(
   }
 
   await interaction.deferReply();
+  await runLeaderboard(interaction.guild.id, async (p) => {
+    await interaction.editReply(p as never);
+  });
+}
 
-  const actions = getAllModActions(interaction.guild.id);
+export async function runLeaderboard(
+  guildId: string,
+  replyFn: (payload: object) => Promise<void>,
+): Promise<void> {
+  const actions = getAllModActions(guildId);
 
   const counts = new Map<string, { tag: string; count: number }>();
   for (const action of actions) {
@@ -53,7 +61,7 @@ export async function execute(
     .slice(0, 12);
 
   if (sorted.length === 0) {
-    await interaction.editReply({
+    await replyFn({
       flags: MessageFlags.IsComponentsV2,
       components: [
         new ContainerBuilder().addTextDisplayComponents(
@@ -61,7 +69,7 @@ export async function execute(
         ),
       ],
       allowedMentions: { parse: [], repliedUser: false },
-    } as never);
+    });
     return;
   }
 
@@ -85,11 +93,11 @@ export async function execute(
     new TextDisplayBuilder().setContent(`-# ${sorted.length} staff member${sorted.length === 1 ? "" : "s"} · ${actions.length} total actions`),
   );
 
-  await interaction.editReply({
+  await replyFn({
     flags: MessageFlags.IsComponentsV2,
     components: [container],
     allowedMentions: { parse: [], repliedUser: false },
-  } as never);
+  });
 }
 
 function buildBar(count: number, max: number): string {

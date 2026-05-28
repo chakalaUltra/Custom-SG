@@ -14,6 +14,8 @@ import { runKick } from "./commands/kick.js";
 import { runModinfo } from "./commands/modinfo.js";
 import { runModlogs } from "./commands/modlogs.js";
 import { runRoleByResolvable } from "./commands/role.js";
+import { runLeaderboard } from "./commands/leaderboard.js";
+import { runRank, parseRankArgs } from "./commands/rank.js";
 import { logger } from "../lib/logger.js";
 import { E } from "./emojis.js";
 
@@ -194,6 +196,33 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
       const roleResolvable = args.slice(1).join(" ");
       if (!roleResolvable) { await message.reply(`${E.cross} Please provide a role name or ID.`); return; }
       await runRoleByResolvable(message, target, member, roleResolvable, send);
+      break;
+    }
+
+    // ─── Leaderboard ──────────────────────────────────────────────────────────
+    case "leaderboard": {
+      if (!canRunCommand(member, "leaderboard")) {
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
+        return;
+      }
+      await runLeaderboard(message.guild.id, send);
+      break;
+    }
+
+    // ─── Rank ─────────────────────────────────────────────────────────────────
+    case "rank": {
+      if (!canRunCommand(member, "rank")) {
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply(`${E.cross} Usage: \`$rank @user <stage 1-5> <High|Mid|Low> <Strong|Stable|Weak>\``); return; }
+      const parsed = parseRankArgs(args.slice(1));
+      if (!parsed) {
+        await message.reply(`${E.cross} Usage: \`$rank @user <stage 1-5> <High|Mid|Low> <Strong|Stable|Weak>\`\nExample: \`$rank @user 3 High Stable\``);
+        return;
+      }
+      await runRank(message.guild.id, target, member, parsed.stage, parsed.midstage, parsed.extrastage, send);
       break;
     }
 

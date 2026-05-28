@@ -12,6 +12,9 @@ import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "rank";
 
+const VALID_MIDSTAGES = ["High", "Mid", "Low"] as const;
+const VALID_EXTRASTAGES = ["Strong", "Stable", "Weak"] as const;
+
 export const data = new SlashCommandBuilder()
   .setName(COMMAND_NAME)
   .setDescription("Assign a rank to a user")
@@ -81,9 +84,23 @@ export async function execute(
     return;
   }
 
-  const rankConfig = getRankRoles(interaction.guild.id);
+  await runRank(interaction.guild.id, target, executor, stage, midstage, extrastage, async (p) => {
+    await interaction.editReply(p as never);
+  });
+}
+
+export async function runRank(
+  guildId: string,
+  target: GuildMember,
+  executor: GuildMember,
+  stage: number,
+  midstage: string,
+  extrastage: string,
+  replyFn: (payload: object) => Promise<void>,
+): Promise<void> {
+  const rankConfig = getRankRoles(guildId);
   if (!rankConfig) {
-    await interaction.editReply({ content: `${E.cross} Rank roles are not configured yet. Use \`/rank-roles\` first.` });
+    await replyFn({ content: `${E.cross} Rank roles are not configured yet. Use \`/rank-roles\` first.` });
     return;
   }
 
@@ -119,13 +136,13 @@ export async function execute(
       await target.roles.add(rolesToAdd);
     }
   } catch {
-    await interaction.editReply({ content: `${E.cross} Failed to modify roles. Ensure the bot has **Manage Roles** and its role is above the rank roles.` });
+    await replyFn({ content: `${E.cross} Failed to modify roles. Ensure the bot has **Manage Roles** and its role is above the rank roles.` });
     return;
   }
 
-  await saveUserRank(interaction.guild.id, target.id, { stage, midstage, extrastage });
+  await saveUserRank(guildId, target.id, { stage, midstage, extrastage });
 
-  await saveModAction(interaction.guild.id, {
+  await saveModAction(guildId, {
     id: generateId(),
     type: "rank",
     moderatorId: executor.id,
@@ -136,7 +153,7 @@ export async function execute(
     timestamp: Date.now(),
   });
 
-  await dispatchModLog(interaction.guild.id, "rank", target.user.tag, target.id, executor.user.tag, {
+  await dispatchModLog(guildId, "rank", target.user.tag, target.id, executor.user.tag, {
     extra: `Stage **${stage}** · **${midstage}** · **${extrastage}**`,
   });
 
@@ -152,11 +169,24 @@ export async function execute(
     lines.push(`${E.info} No role configured for: ${missingRoles.join(", ")} — use \`/rank-roles\` to set them up.`);
   }
 
-  await interaction.editReply(
+  await replyFn(
     buildActionContainer(
       `${E.chart} Rank Assigned`,
       lines,
       `By ${executor.user.tag}`,
     ),
   );
+}
+
+export function parseRankArgs(args: string[]): { stage: number; midstage: string; extrastage: string } | null {
+  const stage = parseInt(args[0] ?? "", 10);
+  if (isNaN(stage) || stage < 1 || stage > 5) return null;
+
+  const midstage = args[1];
+  if (!midstage || !(VALID_MIDSTAGES as readonly string[]).includes(midstage)) return null;
+
+  const extrastage = args[2];
+  if (!extrastage || !(VALID_EXTRASTAGES as readonly string[]).includes(extrastage)) return null;
+
+  return { stage, midstage, extrastage };
 }
