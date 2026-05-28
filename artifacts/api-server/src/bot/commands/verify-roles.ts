@@ -50,12 +50,13 @@ export async function execute(
     mainerRoleId: mainer.id,
   });
 
-  const payload = buildActionContainer("⚙️ Verification Roles Configured", [
-    `**Verified Role:** <@&${verified.id}>`,
-    `**Unverified Role:** <@&${unverified.id}>`,
-    `**Mainer Role:** <@&${mainer.id}>`,
-    `Configured by: ${interaction.user}`,
-  ]);
+  const payload = buildActionContainer(
+    "⚙️ Verification Roles Configured",
+    [
+      `Verified: <@&${verified.id}> · Unverified: <@&${unverified.id}> · Mainer: <@&${mainer.id}>`,
+    ],
+    `Set by ${interaction.user.tag}`,
+  );
 
   await interaction.reply(payload);
 }

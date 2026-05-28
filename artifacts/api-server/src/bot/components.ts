@@ -8,11 +8,13 @@ import {
 export interface ContainerPayload {
   flags: number;
   components: ContainerBuilder[];
+  allowedMentions: { parse: []; repliedUser: false };
 }
 
 export function buildActionContainer(
   title: string,
   lines: string[],
+  footer: string,
 ): ContainerPayload {
   const container = new ContainerBuilder();
   container.addTextDisplayComponents(
@@ -24,8 +26,12 @@ export function buildActionContainer(
       new TextDisplayBuilder().setContent(line),
     );
   }
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`-# ${footer}`),
+  );
   return {
     flags: MessageFlags.IsComponentsV2,
     components: [container],
+    allowedMentions: { parse: [], repliedUser: false },
   };
 }

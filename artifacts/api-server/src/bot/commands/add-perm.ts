@@ -78,10 +78,11 @@ export async function execute(
 
   await saveCommandPerm(interaction.guild.id, role.id, command);
 
-  const payload = buildActionContainer("🔐 Permission Granted", [
-    `<@&${role.id}> can now use **/${command}** and **$${command}**.`,
-    `Granted by: ${interaction.user}`,
-  ]);
+  const payload = buildActionContainer(
+    "🔐 Permission Granted",
+    [`<@&${role.id}> can now use **/${command}**.`],
+    `By ${interaction.user.tag}`,
+  );
 
   await interaction.reply(payload);
 }
@@ -142,10 +143,11 @@ export async function runAddPerm(
 
   await saveCommandPerm(message.guild.id, role.id, command);
 
-  const payload = buildActionContainer("🔐 Permission Granted", [
-    `<@&${role.id}> can now use **/${command}** and **$${command}**.`,
-    `Granted by: ${executor.user.tag}`,
-  ]);
+  const payload = buildActionContainer(
+    "🔐 Permission Granted",
+    [`<@&${role.id}> can now use **/${command}**.`],
+    `By ${executor.user.tag}`,
+  );
 
   await (message.channel as GuildTextBasedChannel).send(payload);
 }

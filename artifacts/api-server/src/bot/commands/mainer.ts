@@ -76,11 +76,11 @@ export async function execute(
     return;
   }
 
-  const payload = buildActionContainer("⭐ Mainer Status Granted", [
-    `**${target.user.tag}** is now a certified mainer!`,
-    `Granted <@&${config.verifiedRoleId}> + <@&${config.mainerRoleId}> and removed from <@&${config.unverifiedRoleId}>.`,
-    `Granted by: ${interaction.user}`,
-  ]);
+  const payload = buildActionContainer(
+    "⭐ Mainer Status Granted",
+    [`**${target.user.tag}** is now a mainer.`],
+    `Granted by ${interaction.user.tag}`,
+  );
 
   await interaction.editReply(payload);
 }
@@ -110,11 +110,11 @@ export async function runMainer(
     return;
   }
 
-  const payload = buildActionContainer("⭐ Mainer Status Granted", [
-    `**${guildMember.user.tag}** is now a certified mainer!`,
-    `Granted <@&${config.verifiedRoleId}> + <@&${config.mainerRoleId}> and removed from <@&${config.unverifiedRoleId}>.`,
-    `Granted by: ${executor.user.tag}`,
-  ]);
+  const payload = buildActionContainer(
+    "⭐ Mainer Status Granted",
+    [`**${guildMember.user.tag}** is now a mainer.`],
+    `Granted by ${executor.user.tag}`,
+  );
 
   await replyFn(payload);
 }

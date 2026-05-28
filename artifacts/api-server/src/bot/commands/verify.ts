@@ -71,11 +71,11 @@ export async function execute(
     return;
   }
 
-  const payload = buildActionContainer("✅ User Verified", [
-    `**${target.user.tag}** has been verified!`,
-    `Granted <@&${config.verifiedRoleId}> and removed from <@&${config.unverifiedRoleId}>.`,
-    `Verified by: ${interaction.user}`,
-  ]);
+  const payload = buildActionContainer(
+    "✅ User Verified",
+    [`**${target.user.tag}** has been verified.`],
+    `Verified by ${interaction.user.tag}`,
+  );
 
   await interaction.editReply(payload);
 }
@@ -105,11 +105,11 @@ export async function runVerify(
     return;
   }
 
-  const payload = buildActionContainer("✅ User Verified", [
-    `**${guildMember.user.tag}** has been verified!`,
-    `Granted <@&${config.verifiedRoleId}> and removed from <@&${config.unverifiedRoleId}>.`,
-    `Verified by: ${executor.user.tag}`,
-  ]);
+  const payload = buildActionContainer(
+    "✅ User Verified",
+    [`**${guildMember.user.tag}** has been verified.`],
+    `Verified by ${executor.user.tag}`,
+  );
 
   await replyFn(payload);
 }
