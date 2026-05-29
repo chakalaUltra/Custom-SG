@@ -76,12 +76,19 @@ export async function initStore(client: Client): Promise<void> {
     }
     storeChannel = ch as GuildTextBasedChannel;
 
-    const messages = await ch.messages.fetch({ limit: 100 });
-    const sorted = [...messages.values()].sort(
-      (a, b) => a.createdTimestamp - b.createdTimestamp,
-    );
+    const allMessages: import("discord.js").Message[] = [];
+    let before: string | undefined = undefined;
+    while (true) {
+      const batch = await ch.messages.fetch({ limit: 100, ...(before ? { before } : {}) });
+      if (batch.size === 0) break;
+      allMessages.push(...batch.values());
+      before = batch.last()!.id;
+      if (batch.size < 100) break;
+    }
 
-    for (const msg of sorted) {
+    allMessages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+
+    for (const msg of allMessages) {
       if (!msg.content.startsWith(DATA_PREFIX)) continue;
       try {
         const parsed = JSON.parse(msg.content.slice(DATA_PREFIX.length)) as {
@@ -96,6 +103,7 @@ export async function initStore(client: Client): Promise<void> {
 
     logger.info(
       {
+        totalMessages: allMessages.length,
         verifyRolesCount: verifyRolesStore.size,
         permCount: permStore.size,
         warnUsers: warnStore.size,
