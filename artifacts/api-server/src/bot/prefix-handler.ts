@@ -16,6 +16,7 @@ import { runModlogs } from "./commands/modlogs.js";
 import { runRoleByResolvable } from "./commands/role.js";
 import { runLeaderboard } from "./commands/leaderboard.js";
 import { runRank, parseRankArgs } from "./commands/rank.js";
+import { runUserinfo } from "./commands/userinfo.js";
 import { logger } from "../lib/logger.js";
 import { E } from "./emojis.js";
 
@@ -223,6 +224,18 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         return;
       }
       await runRank(message.guild.id, target, member, parsed.stage, parsed.midstage, parsed.extrastage, send);
+      break;
+    }
+
+    // ─── Userinfo ─────────────────────────────────────────────────────────────
+    case "userinfo": {
+      if (!canRunCommand(member, "userinfo")) {
+        await message.reply(`${E.cross} You do not have permission to use this command.`);
+        return;
+      }
+      const target = await resolveGuildMember(message, args[0]);
+      if (!target) { await message.reply(`${E.cross} Usage: \`$userinfo @user\``); return; }
+      await runUserinfo(message.guild.id, target, member, message.client, send);
       break;
     }
 

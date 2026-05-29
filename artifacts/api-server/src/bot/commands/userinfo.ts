@@ -4,6 +4,8 @@ import {
   PermissionFlagsBits,
   GuildMember,
   EmbedBuilder,
+  Client,
+  User,
 } from "discord.js";
 import { getVerifyRoles, getUserRank, getVerifierForUser } from "../store.js";
 import { canRunCommand } from "../permissions.js";
@@ -13,22 +15,20 @@ export const COMMAND_NAME = "userinfo";
 
 export const data = new SlashCommandBuilder()
   .setName(COMMAND_NAME)
-  .setDescription("View detailed info about a user")
+  .setDescription("View info about a user")
   .addUserOption((opt) =>
     opt.setName("user").setDescription("The user to look up").setRequired(true),
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
-export async function execute(
-  interaction: ChatInputCommandInteraction,
-): Promise<void> {
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
   if (!interaction.guild) {
     await interaction.reply({ content: `${E.cross} Server only.`, ephemeral: true });
     return;
   }
   const executor = interaction.member as GuildMember;
   if (!canRunCommand(executor, COMMAND_NAME)) {
-    await interaction.reply({ content: `${E.cross} You do not have permission to use this command.`, ephemeral: true });
+    await interaction.reply({ content: `${E.cross} No permission.`, ephemeral: true });
     return;
   }
 
@@ -37,127 +37,107 @@ export async function execute(
 
   const target = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
   if (!target) {
-    await interaction.editReply({ content: `${E.cross} Could not find that user in this server.` });
+    await interaction.editReply({ content: `${E.cross} User not found in this server.` });
     return;
   }
 
   const fullUser = await interaction.client.users.fetch(targetUser.id, { force: true }).catch(() => targetUser);
+  const embed = buildUserinfoEmbed(interaction.guild.id, target, fullUser, executor);
+  await interaction.editReply({ embeds: [embed] });
+}
 
-  const verifyConfig = getVerifyRoles(interaction.guild.id);
-  const rank = getUserRank(interaction.guild.id, target.id);
-  const verifyAction = getVerifierForUser(interaction.guild.id, target.id);
+export async function runUserinfo(
+  guildId: string,
+  target: GuildMember,
+  executor: GuildMember,
+  client: Client,
+  replyFn: (payload: object) => Promise<void>,
+): Promise<void> {
+  const fullUser = await client.users.fetch(target.id, { force: true }).catch(() => target.user);
+  const embed = buildUserinfoEmbed(guildId, target, fullUser, executor);
+  await replyFn({ embeds: [embed] });
+}
+
+function buildUserinfoEmbed(
+  guildId: string,
+  target: GuildMember,
+  fullUser: User,
+  executor: GuildMember,
+): EmbedBuilder {
+  const verifyConfig = getVerifyRoles(guildId);
+  const rank = getUserRank(guildId, target.id);
+  const verifyAction = getVerifierForUser(guildId, target.id);
 
   const isMainer = verifyConfig ? target.roles.cache.has(verifyConfig.mainerRoleId) : false;
   const isVerified = verifyConfig ? target.roles.cache.has(verifyConfig.verifiedRoleId) : false;
 
-  let statusEmoji: string;
-  let statusLabel: string;
-  let embedColor: number;
+  const statusEmoji = isMainer ? E.star : isVerified ? E.shield : E.question;
+  const statusLabel = isMainer ? "Mainer" : isVerified ? "Verified" : "Visitor";
 
-  if (isMainer) {
-    statusEmoji = E.star;
-    statusLabel = "Mainer";
-    embedColor = 0xffd700;
-  } else if (isVerified) {
-    statusEmoji = E.shield;
-    statusLabel = "Verified";
-    embedColor = 0x44cc88;
-  } else {
-    statusEmoji = E.question;
-    statusLabel = "Visitor";
-    embedColor = 0x7289da;
-  }
+  let color = isMainer ? 0xffd700 : isVerified ? 0x5dbb8a : 0x7289da;
+  if (target.displayColor && target.displayColor !== 0) color = target.displayColor;
 
-  if (target.displayColor && target.displayColor !== 0) {
-    embedColor = target.displayColor;
-  }
-
-  const visibleRoles = [...target.roles.cache.values()]
-    .filter((r) => r.id !== interaction.guild!.id)
+  const topRoles = [...target.roles.cache.values()]
+    .filter((r) => r.id !== target.guild.id)
     .sort((a, b) => b.position - a.position)
-    .slice(0, 10);
+    .slice(0, 6);
 
-  const rolesDisplay = visibleRoles.length > 0
-    ? visibleRoles.map((r) => `<@&${r.id}>`).join("  ")
-    : "*No roles*";
+  const rankLine = rank
+    ? `${E.chart}  Stage **${rank.stage}** · ${rank.midstage} · ${rank.extrastage}`
+    : `${E.chart}  *Not ranked*`;
 
-  const joinedAt = target.joinedAt
-    ? `<t:${Math.floor(target.joinedAt.getTime() / 1000)}:D>\n<t:${Math.floor(target.joinedAt.getTime() / 1000)}:R>`
-    : "Unknown";
+  const verifyLine = verifyAction
+    ? `${E.shield}  Verified by **${verifyAction.moderatorTag}** · <t:${Math.floor(verifyAction.timestamp / 1000)}:R>`
+    : `${E.shield}  *Not verified*`;
 
-  const createdAt = `<t:${Math.floor(fullUser.createdAt.getTime() / 1000)}:D>\n<t:${Math.floor(fullUser.createdAt.getTime() / 1000)}:R>`;
-
-  const rankStr = rank
-    ? `Stage **${rank.stage}** · **${rank.midstage}** · **${rank.extrastage}**`
-    : "*Not ranked*";
-
-  const verifiedByStr = verifyAction
-    ? `**${verifyAction.moderatorTag}**\n<t:${Math.floor(verifyAction.timestamp / 1000)}:R>`
-    : "*Not verified*";
-
-  const displayName = target.nickname ?? fullUser.username;
-  const tag = fullUser.tag;
-
-  const descLines = [
-    `### ${statusEmoji} ${displayName}`,
-    `\`${tag}\` · <@${target.id}>`,
-    ``,
-    `${E.chart} **Rank** — ${rankStr}`,
-  ];
+  const joinTs = target.joinedAt ? Math.floor(target.joinedAt.getTime() / 1000) : null;
+  const createTs = Math.floor(fullUser.createdAt.getTime() / 1000);
 
   const embed = new EmbedBuilder()
-    .setColor(embedColor)
-    .setDescription(descLines.join("\n"))
+    .setColor(color)
+    .setAuthor({
+      name: `${statusEmoji}  ${target.nickname ?? fullUser.username}`,
+      iconURL: fullUser.displayAvatarURL({ size: 64 }),
+    })
+    .setDescription(
+      [
+        `<@${target.id}>  ·  \`${fullUser.tag}\``,
+        ``,
+        rankLine,
+        verifyLine,
+      ].join("\n"),
+    )
     .setThumbnail(fullUser.displayAvatarURL({ size: 256 }))
     .addFields(
       {
-        name: `${E.shield}  Status`,
+        name: "Joined",
+        value: joinTs ? `<t:${joinTs}:D>\n<t:${joinTs}:R>` : "Unknown",
+        inline: true,
+      },
+      {
+        name: "Created",
+        value: `<t:${createTs}:D>\n<t:${createTs}:R>`,
+        inline: true,
+      },
+      {
+        name: "Status",
         value: `**${statusLabel}**`,
         inline: true,
       },
-      {
-        name: `${E.shield}  Verified By`,
-        value: verifiedByStr,
-        inline: true,
-      },
-      {
-        name: "\u200b",
-        value: "\u200b",
-        inline: true,
-      },
-      {
-        name: `${E.save}  Joined Server`,
-        value: joinedAt,
-        inline: true,
-      },
-      {
-        name: `${E.link}  Account Created`,
-        value: createdAt,
-        inline: true,
-      },
-      {
-        name: "\u200b",
-        value: "\u200b",
-        inline: true,
-      },
-      {
-        name: `${E.sliders}  Roles  (${visibleRoles.length})`,
-        value: rolesDisplay,
-        inline: false,
-      },
     )
-    .setFooter({
-      text: `ID: ${target.id}  •  Requested by ${executor.user.tag}`,
-      iconURL: executor.user.displayAvatarURL({ size: 32 }),
-    })
+    .setFooter({ text: `ID: ${target.id}` })
     .setTimestamp();
 
-  const bannerURL = fullUser.bannerURL({ size: 1024 });
-  if (bannerURL) {
-    embed.setImage(bannerURL);
-  } else {
-    embed.setImage(fullUser.displayAvatarURL({ size: 1024, forceStatic: false }));
+  if (topRoles.length > 0) {
+    embed.addFields({
+      name: `Roles (${target.roles.cache.size - 1})`,
+      value: topRoles.map((r) => `<@&${r.id}>`).join("  "),
+      inline: false,
+    });
   }
 
-  await interaction.editReply({ embeds: [embed] });
+  const bannerURL = fullUser.bannerURL({ size: 1024 });
+  if (bannerURL) embed.setImage(bannerURL);
+
+  return embed;
 }
