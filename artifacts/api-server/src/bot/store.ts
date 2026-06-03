@@ -192,6 +192,11 @@ export async function saveVerifyRoles(
 
 // ─── Permissions ─────────────────────────────────────────────────────────────
 
+export function getPermsForRole(guildId: string, roleId: string): string[] {
+  const perms = permStore.get(`${guildId}:${roleId}`);
+  return perms ? [...perms].sort() : [];
+}
+
 export function hasRolePerm(
   guildId: string,
   roleIds: readonly string[],

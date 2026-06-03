@@ -3,6 +3,7 @@ import { canRunCommand } from "./permissions.js";
 import { runVerify } from "./commands/verify.js";
 import { runMainer } from "./commands/mainer.js";
 import { runAddPerm } from "./commands/add-perm.js";
+import { runViewPerm } from "./commands/view-perm.js";
 import { runWarn } from "./commands/warn.js";
 import { runWarnings } from "./commands/warnings.js";
 import { sendDewarnMenu } from "./commands/dewarn.js";
@@ -17,6 +18,7 @@ import { runRoleByResolvable } from "./commands/role.js";
 import { runLeaderboard } from "./commands/leaderboard.js";
 import { runRank, parseRankArgs } from "./commands/rank.js";
 import { runUserinfo } from "./commands/userinfo.js";
+import { replyWithGuide } from "./guides.js";
 import { logger } from "../lib/logger.js";
 import { E } from "./emojis.js";
 
@@ -56,7 +58,7 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$verify @user\``); return; }
+      if (!target) { await replyWithGuide(message, "verify"); return; }
       await runVerify(target, member, send);
       break;
     }
@@ -67,13 +69,19 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         return;
       }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$mainer @user\``); return; }
+      if (!target) { await replyWithGuide(message, "mainer"); return; }
       await runMainer(target, member, send);
       break;
     }
 
     case "add-perm": {
+      if (args.length < 2) { await replyWithGuide(message, "add-perm"); return; }
       await runAddPerm(message, member, args);
+      break;
+    }
+
+    case "view-perm": {
+      await runViewPerm(message, member, args);
       break;
     }
 
@@ -83,10 +91,11 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "warn"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$warn @user <reason>\``); return; }
+      if (!target) { await replyWithGuide(message, "warn"); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
+      if (!reason) { await replyWithGuide(message, "warn"); return; }
       await runWarn(message.guild.id, target.id, target.user.tag, member, reason, send);
       break;
     }
@@ -96,8 +105,9 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "warnings"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$warnings @user\``); return; }
+      if (!target) { await replyWithGuide(message, "warnings"); return; }
       await runWarnings(message.guild.id, target.id, target.user.tag, send);
       break;
     }
@@ -107,8 +117,9 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "dewarn"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$dewarn @user\``); return; }
+      if (!target) { await replyWithGuide(message, "dewarn"); return; }
       await sendDewarnMenu(message.guild.id, target.id, target.user.tag, send);
       break;
     }
@@ -119,12 +130,13 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "mute"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$mute @user <duration> <reason>\``); return; }
+      if (!target) { await replyWithGuide(message, "mute"); return; }
       const duration = args[1];
-      if (!duration) { await message.reply(`${E.cross} Please provide a duration (e.g. \`10m\`, \`2h\`, \`1d\`).`); return; }
+      if (!duration) { await replyWithGuide(message, "mute"); return; }
       const reason = args.slice(2).join(" ");
-      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
+      if (!reason) { await replyWithGuide(message, "mute"); return; }
       await runMute(message.guild.id, target, member, duration, reason, send);
       break;
     }
@@ -134,10 +146,11 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "unmute"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$unmute @user <reason>\``); return; }
+      if (!target) { await replyWithGuide(message, "unmute"); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
+      if (!reason) { await replyWithGuide(message, "unmute"); return; }
       await runUnmute(message.guild.id, target, member, reason, send);
       break;
     }
@@ -147,12 +160,11 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
-      const userArg = args[0];
-      if (!userArg) { await message.reply(`${E.cross} Usage: \`$ban @user <reason>\``); return; }
+      if (!args[0]) { await replyWithGuide(message, "ban"); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
-      const userId = extractUserId(userArg);
-      if (!userId) { await message.reply(`${E.cross} Please mention a user or provide a user ID.`); return; }
+      if (!reason) { await replyWithGuide(message, "ban"); return; }
+      const userId = extractUserId(args[0]);
+      if (!userId) { await replyWithGuide(message, "ban"); return; }
       const target = await message.guild.members.fetch(userId).catch(() => null);
       await runBan(message.guild.id, userId, target?.user.tag ?? userId, target, member, reason, send);
       break;
@@ -163,12 +175,11 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
-      const userArg = args[0];
-      if (!userArg) { await message.reply(`${E.cross} Usage: \`$unban <userID> <reason>\``); return; }
+      if (!args[0]) { await replyWithGuide(message, "unban"); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
-      const userId = extractUserId(userArg);
-      if (!userId) { await message.reply(`${E.cross} Please provide a valid user ID.`); return; }
+      if (!reason) { await replyWithGuide(message, "unban"); return; }
+      const userId = extractUserId(args[0]);
+      if (!userId) { await replyWithGuide(message, "unban"); return; }
       await runUnban(message.guild.id, userId, member, reason, send, message.client);
       break;
     }
@@ -178,10 +189,11 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "kick"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$kick @user <reason>\``); return; }
+      if (!target) { await replyWithGuide(message, "kick"); return; }
       const reason = args.slice(1).join(" ");
-      if (!reason) { await message.reply(`${E.cross} Please provide a reason.`); return; }
+      if (!reason) { await replyWithGuide(message, "kick"); return; }
       await runKick(message.guild.id, target, member, reason, send);
       break;
     }
@@ -192,10 +204,11 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "role"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$role @user <role name or ID>\``); return; }
+      if (!target) { await replyWithGuide(message, "role"); return; }
       const roleResolvable = args.slice(1).join(" ");
-      if (!roleResolvable) { await message.reply(`${E.cross} Please provide a role name or ID.`); return; }
+      if (!roleResolvable) { await replyWithGuide(message, "role"); return; }
       await runRoleByResolvable(message, target, member, roleResolvable, send);
       break;
     }
@@ -216,13 +229,11 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "rank"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$rank @user <stage 1-5> <High|Mid|Low> <Strong|Stable|Weak>\``); return; }
+      if (!target) { await replyWithGuide(message, "rank"); return; }
       const parsed = parseRankArgs(args.slice(1));
-      if (!parsed) {
-        await message.reply(`${E.cross} Usage: \`$rank @user <stage 1-5> <High|Mid|Low> <Strong|Stable|Weak>\`\nExample: \`$rank @user 3 High Stable\``);
-        return;
-      }
+      if (!parsed) { await replyWithGuide(message, "rank"); return; }
       await runRank(message.guild.id, target, member, parsed.stage, parsed.midstage, parsed.extrastage, send);
       break;
     }
@@ -233,8 +244,9 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "userinfo"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$userinfo @user\``); return; }
+      if (!target) { await replyWithGuide(message, "userinfo"); return; }
       await runUserinfo(message.guild.id, target, member, message.client, send);
       break;
     }
@@ -245,13 +257,15 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
         await message.reply(`${E.cross} You do not have permission to use this command.`);
         return;
       }
+      if (!args[0]) { await replyWithGuide(message, "modinfo"); return; }
       const target = await resolveGuildMember(message, args[0]);
-      if (!target) { await message.reply(`${E.cross} Usage: \`$modinfo @user\``); return; }
+      if (!target) { await replyWithGuide(message, "modinfo"); return; }
       await runModinfo(message.guild.id, target.id, target.user.tag, send);
       break;
     }
 
     case "modlogs": {
+      if (args.length === 0) { await replyWithGuide(message, "modlogs"); return; }
       await runModlogs(message, member, args);
       break;
     }
@@ -273,7 +287,7 @@ async function resolveGuildMember(
 
 function extractUserId(arg: string): string | null {
   const mentionMatch = arg.match(/^<@!?(\d+)>$/);
-  if (mentionMatch) return mentionMatch[1];
+  if (mentionMatch) return mentionMatch[1]!;
   if (/^\d+$/.test(arg)) return arg;
   return null;
 }

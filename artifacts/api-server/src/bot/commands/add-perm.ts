@@ -32,6 +32,7 @@ const GRANTABLE_COMMANDS = [
   "rank-roles",
   "leaderboard",
   "userinfo",
+  "view-perm",
 ];
 
 export const data = new SlashCommandBuilder()
