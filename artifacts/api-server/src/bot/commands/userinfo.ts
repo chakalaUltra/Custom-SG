@@ -10,6 +10,7 @@ import {
 import { getVerifyRoles, getUserRank, getVerifierForUser } from "../store.js";
 import { canRunCommand } from "../permissions.js";
 import { E } from "../emojis.js";
+import { C } from "../colors.js";
 
 export const COMMAND_NAME = "userinfo";
 
@@ -74,7 +75,7 @@ function buildUserinfoEmbed(
   const statusEmoji = isMainer ? E.star : isVerified ? E.shield : E.question;
   const statusLabel = isMainer ? "Mainer" : isVerified ? "Verified" : "Visitor";
 
-  let color = isMainer ? 0xffd700 : isVerified ? 0x5dbb8a : 0x7289da;
+  let color = isMainer ? C.actMainer : isVerified ? C.catVerification : C.main;
   if (target.displayColor && target.displayColor !== 0) color = target.displayColor;
 
   const topRoles = [...target.roles.cache.values()]

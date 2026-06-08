@@ -10,6 +10,7 @@ import {
 import { getPermsForRole } from "../store.js";
 import { canRunCommand } from "../permissions.js";
 import { E } from "../emojis.js";
+import { C } from "../colors.js";
 
 export const COMMAND_NAME = "view-perm";
 
@@ -77,7 +78,7 @@ function buildViewPermEmbed(guildId: string, roleId: string, roleName: string): 
   const perms = getPermsForRole(guildId, roleId);
 
   const embed = new EmbedBuilder()
-    .setColor(0x5865f2)
+    .setColor(C.main)
     .setTitle(`${E.sliders}  Permissions — @${roleName}`)
     .setFooter({ text: `Role ID: ${roleId}` })
     .setTimestamp();

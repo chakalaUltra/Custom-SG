@@ -1,5 +1,6 @@
 import { EmbedBuilder, Message } from "discord.js";
 import { E } from "./emojis.js";
+import { C } from "./colors.js";
 
 type Category = "verification" | "warning" | "moderation" | "role" | "info" | "config";
 
@@ -20,12 +21,12 @@ interface Guide {
 }
 
 const CATEGORY_COLORS: Record<Category, number> = {
-  verification: 0x3ba55d,
-  warning:      0xfaa61a,
-  moderation:   0xed4245,
-  role:         0x9b59b6,
-  info:         0x5865f2,
-  config:       0x747f8d,
+  verification: C.catVerification,
+  warning:      C.catWarning,
+  moderation:   C.catModeration,
+  role:         C.catRole,
+  info:         C.catInfo,
+  config:       C.catConfig,
 };
 
 const CATEGORY_LABELS: Record<Category, string> = {

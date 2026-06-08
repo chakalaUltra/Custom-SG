@@ -1,19 +1,20 @@
 import { EmbedBuilder } from "discord.js";
 import { sendModLog } from "./store.js";
 import { E } from "./emojis.js";
+import { C } from "./colors.js";
 
 const ACTION_COLORS: Record<string, number> = {
-  warn:    0xff9900,
-  dewarn:  0x00aaff,
-  kick:    0xffcc00,
-  ban:     0xff4444,
-  unban:   0x44ff88,
-  mute:    0x9944ff,
-  unmute:  0x44aaff,
-  verify:  0x44cc44,
-  mainer:  0xffd700,
-  role:    0x7289da,
-  rank:    0xaa44ff,
+  warn:   C.actWarn,
+  dewarn: C.actDewarn,
+  kick:   C.actKick,
+  ban:    C.actBan,
+  unban:  C.actUnban,
+  mute:   C.actMute,
+  unmute: C.actUnmute,
+  verify: C.actVerify,
+  mainer: C.actMainer,
+  role:   C.actRole,
+  rank:   C.actRank,
 };
 
 const ACTION_EMOJI: Record<string, string> = {
