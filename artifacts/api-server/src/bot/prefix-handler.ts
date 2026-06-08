@@ -18,6 +18,7 @@ import { runRoleByResolvable } from "./commands/role.js";
 import { runLeaderboard } from "./commands/leaderboard.js";
 import { runRank, parseRankArgs } from "./commands/rank.js";
 import { runUserinfo } from "./commands/userinfo.js";
+import { runHelp } from "./commands/help.js";
 import { replyWithGuide } from "./guides.js";
 import { logger } from "../lib/logger.js";
 import { E } from "./emojis.js";
@@ -51,6 +52,12 @@ export async function handlePrefixMessage(message: Message): Promise<void> {
   };
 
   switch (commandName) {
+    // ─── Help ─────────────────────────────────────────────────────────────────
+    case "help": {
+      await runHelp(message);
+      break;
+    }
+
     // ─── Verification ────────────────────────────────────────────────────────
     case "verify": {
       if (!canRunCommand(member, "verify")) {

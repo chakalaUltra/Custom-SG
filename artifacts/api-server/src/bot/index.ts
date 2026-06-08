@@ -32,6 +32,7 @@ import * as rankCmd from "./commands/rank.js";
 import * as rankRolesCmd from "./commands/rank-roles.js";
 import * as userinfoCmd from "./commands/userinfo.js";
 import * as viewPermCmd from "./commands/view-perm.js";
+import * as helpCmd from "./commands/help.js";
 
 interface Command {
   data: { toJSON: () => unknown };
@@ -59,6 +60,7 @@ commands.set("rank", rankCmd);
 commands.set("rank-roles", rankRolesCmd);
 commands.set("userinfo", userinfoCmd);
 commands.set("view-perm", viewPermCmd);
+commands.set("help", helpCmd);
 
 export function startBot(): void {
   const token = process.env["DISCORD_BOT_TOKEN"];
