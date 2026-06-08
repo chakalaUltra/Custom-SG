@@ -12,6 +12,7 @@ import { logger } from "../lib/logger.js";
 import { initStore } from "./store.js";
 import { handlePrefixMessage } from "./prefix-handler.js";
 import { handleDewarnSelect } from "./commands/dewarn.js";
+import { handleHelpSelect } from "./commands/help.js";
 import * as verifyRolesCmd from "./commands/verify-roles.js";
 import * as verifyCmd from "./commands/verify.js";
 import * as mainerCmd from "./commands/mainer.js";
@@ -114,6 +115,16 @@ export function startBot(): void {
             components: [],
           }).catch(() => {});
         }
+        return;
+      }
+
+      if (interaction.customId === "help:category") {
+        try {
+          await handleHelpSelect(interaction as StringSelectMenuInteraction);
+        } catch (err) {
+          logger.error({ err }, "Error handling help category select");
+        }
+        return;
       }
     }
   });
