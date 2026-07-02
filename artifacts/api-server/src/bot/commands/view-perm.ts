@@ -3,14 +3,16 @@ import {
   ChatInputCommandInteraction,
   PermissionFlagsBits,
   GuildMember,
-  EmbedBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  MessageFlags,
   type GuildTextBasedChannel,
   Message,
 } from "discord.js";
 import { getPermsForRole } from "../store.js";
 import { canRunCommand } from "../permissions.js";
 import { E } from "../emojis.js";
-import { C } from "../colors.js";
 
 export const COMMAND_NAME = "view-perm";
 
@@ -34,8 +36,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   }
 
   const role = interaction.options.getRole("role", true);
-  const embed = buildViewPermEmbed(interaction.guild.id, role.id, role.name);
-  await interaction.reply({ embeds: [embed], ephemeral: false });
+  const container = buildViewPermContainer(interaction.guild.id, role.id, role.name);
+  await interaction.reply({
+    flags: MessageFlags.IsComponentsV2,
+    components: [container],
+  } as never);
 }
 
 export async function runViewPerm(
@@ -70,27 +75,41 @@ export async function runViewPerm(
     return;
   }
 
-  const embed = buildViewPermEmbed(message.guild.id, role.id, role.name);
-  await (message.channel as GuildTextBasedChannel).send({ embeds: [embed] });
+  const container = buildViewPermContainer(message.guild.id, role.id, role.name);
+  await (message.channel as GuildTextBasedChannel).send({
+    flags: MessageFlags.IsComponentsV2,
+    components: [container],
+  } as never);
 }
 
-function buildViewPermEmbed(guildId: string, roleId: string, roleName: string): EmbedBuilder {
+function buildViewPermContainer(guildId: string, roleId: string, roleName: string): ContainerBuilder {
   const perms = getPermsForRole(guildId, roleId);
+  const ts = Math.floor(Date.now() / 1000);
 
-  const embed = new EmbedBuilder()
-    .setColor(C.main)
-    .setTitle(`${E.sliders}  Permissions — @${roleName}`)
-    .setFooter({ text: `Role ID: ${roleId}` })
-    .setTimestamp();
+  const container = new ContainerBuilder();
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`## ${E.sliders}  Permissions — @${roleName}`),
+  );
+  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
   if (perms.length === 0) {
-    embed.setDescription(`<@&${roleId}> has **no** bot command permissions.\nUse \`/add-perm\` or \`$add-perm\` to grant some.`);
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `<@&${roleId}> has **no** bot command permissions.\nUse \`/add-perm\` or \`;add-perm\` to grant some.`,
+      ),
+    );
   } else {
-    embed.setDescription(
-      `<@&${roleId}> can use **${perms.length}** command${perms.length === 1 ? "" : "s"}:\n\n` +
-      perms.map((cmd) => `${E.check}  \`/${cmd}\``).join("\n"),
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `<@&${roleId}> can use **${perms.length}** command${perms.length === 1 ? "" : "s"}:\n\n` +
+        perms.map((cmd) => `${E.check}  \`/${cmd}\``).join("\n"),
+      ),
     );
   }
 
-  return embed;
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`-# Role ID: ${roleId}  ·  <t:${ts}:f>`),
+  );
+
+  return container;
 }

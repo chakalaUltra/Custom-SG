@@ -1,21 +1,10 @@
-import { EmbedBuilder } from "discord.js";
+import {
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+} from "discord.js";
 import { sendModLog } from "./store.js";
 import { E } from "./emojis.js";
-import { C } from "./colors.js";
-
-const ACTION_COLORS: Record<string, number> = {
-  warn:   C.actWarn,
-  dewarn: C.actDewarn,
-  kick:   C.actKick,
-  ban:    C.actBan,
-  unban:  C.actUnban,
-  mute:   C.actMute,
-  unmute: C.actUnmute,
-  verify: C.actVerify,
-  mainer: C.actMainer,
-  role:   C.actRole,
-  rank:   C.actRank,
-};
 
 const ACTION_EMOJI: Record<string, string> = {
   warn:   E.info,
@@ -40,19 +29,32 @@ export async function dispatchModLog(
   opts?: { reason?: string; extra?: string },
 ): Promise<void> {
   const emoji = ACTION_EMOJI[type] ?? E.message;
-  const color = ACTION_COLORS[type] ?? 0x7289da;
+  const ts = Math.floor(Date.now() / 1000);
 
-  const embed = new EmbedBuilder()
-    .setColor(color)
-    .setTitle(`${emoji} ${type.toUpperCase()}`)
-    .addFields(
-      { name: "User", value: `${targetTag} (\`${targetId}\`)`, inline: true },
-      { name: "Moderator", value: moderatorTag, inline: true },
-    )
-    .setTimestamp();
+  const container = new ContainerBuilder();
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`## ${emoji}  ${type.toUpperCase()}`),
+  );
+  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      `${E.info}  **User:** ${targetTag} (\`${targetId}\`)\n` +
+      `${E.sliders}  **Moderator:** ${moderatorTag}`,
+    ),
+  );
+  if (opts?.reason) {
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`${E.bell}  **Reason:** ${opts.reason}`),
+    );
+  }
+  if (opts?.extra) {
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`${E.message}  **Details:** ${opts.extra}`),
+    );
+  }
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`-# <t:${ts}:f>`),
+  );
 
-  if (opts?.reason) embed.addFields({ name: "Reason", value: opts.reason });
-  if (opts?.extra) embed.addFields({ name: "Details", value: opts.extra });
-
-  await sendModLog(guildId, embed.toJSON());
+  await sendModLog(guildId, container);
 }

@@ -65,7 +65,7 @@ A custom Discord moderation bot for the Vanguard Senate server. Handles member v
 
 ## User preferences
 
-- Bot prefix: `$`
+- Bot prefix: `;`
 - Data storage: Discord channel `1501175897678413836`
 
 ## Gotchas

@@ -104,7 +104,7 @@ export async function runAddPerm(
   }
 
   if (args.length < 2) {
-    await message.reply(`${E.cross} Usage: \`$add-perm @role <command>\`\nGrantable commands: ${GRANTABLE_COMMANDS.join(", ")}`);
+    await message.reply(`${E.cross} Usage: \`;add-perm @role <command>\`\nGrantable commands: ${GRANTABLE_COMMANDS.join(", ")}`);
     return;
   }
 

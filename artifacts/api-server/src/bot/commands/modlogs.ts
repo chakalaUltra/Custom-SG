@@ -65,7 +65,7 @@ export async function runModlogs(
 
   const channelArg = args[0];
   if (!channelArg) {
-    await message.reply(`${E.cross} Usage: \`$modlogs #channel\` or \`$modlogs CHANNEL_ID\``);
+    await message.reply(`${E.cross} Usage: \`;modlogs #channel\` or \`;modlogs CHANNEL_ID\``);
     return;
   }
 

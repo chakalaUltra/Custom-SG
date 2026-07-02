@@ -3,14 +3,16 @@ import {
   ChatInputCommandInteraction,
   PermissionFlagsBits,
   GuildMember,
-  EmbedBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  MessageFlags,
   Client,
   User,
 } from "discord.js";
 import { getVerifyRoles, getUserRank, getVerifierForUser } from "../store.js";
 import { canRunCommand } from "../permissions.js";
 import { E } from "../emojis.js";
-import { C } from "../colors.js";
 
 export const COMMAND_NAME = "userinfo";
 
@@ -43,8 +45,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   }
 
   const fullUser = await interaction.client.users.fetch(targetUser.id, { force: true }).catch(() => targetUser);
-  const embed = buildUserinfoEmbed(interaction.guild.id, target, fullUser, executor);
-  await interaction.editReply({ embeds: [embed] });
+  const container = buildUserinfoContainer(interaction.guild.id, target, fullUser, executor);
+  await interaction.editReply({
+    flags: MessageFlags.IsComponentsV2,
+    components: [container],
+  } as never);
 }
 
 export async function runUserinfo(
@@ -55,16 +60,19 @@ export async function runUserinfo(
   replyFn: (payload: object) => Promise<void>,
 ): Promise<void> {
   const fullUser = await client.users.fetch(target.id, { force: true }).catch(() => target.user);
-  const embed = buildUserinfoEmbed(guildId, target, fullUser, executor);
-  await replyFn({ embeds: [embed] });
+  const container = buildUserinfoContainer(guildId, target, fullUser, executor);
+  await replyFn({
+    flags: MessageFlags.IsComponentsV2,
+    components: [container],
+  });
 }
 
-function buildUserinfoEmbed(
+function buildUserinfoContainer(
   guildId: string,
   target: GuildMember,
   fullUser: User,
-  executor: GuildMember,
-): EmbedBuilder {
+  _executor: GuildMember,
+): ContainerBuilder {
   const verifyConfig = getVerifyRoles(guildId);
   const rank = getUserRank(guildId, target.id);
   const verifyAction = getVerifierForUser(guildId, target.id);
@@ -74,9 +82,6 @@ function buildUserinfoEmbed(
 
   const statusEmoji = isMainer ? E.star : isVerified ? E.shield : E.question;
   const statusLabel = isMainer ? "Mainer" : isVerified ? "Verified" : "Visitor";
-
-  let color = isMainer ? C.actMainer : isVerified ? C.catVerification : C.main;
-  if (target.displayColor && target.displayColor !== 0) color = target.displayColor;
 
   const topRoles = [...target.roles.cache.values()]
     .filter((r) => r.id !== target.guild.id)
@@ -94,51 +99,42 @@ function buildUserinfoEmbed(
   const joinTs = target.joinedAt ? Math.floor(target.joinedAt.getTime() / 1000) : null;
   const createTs = Math.floor(fullUser.createdAt.getTime() / 1000);
 
-  const embed = new EmbedBuilder()
-    .setColor(color)
-    .setAuthor({
-      name: `${statusEmoji}  ${target.nickname ?? fullUser.username}`,
-      iconURL: fullUser.displayAvatarURL({ size: 64 }),
-    })
-    .setDescription(
-      [
-        `<@${target.id}>  ·  \`${fullUser.tag}\``,
-        ``,
-        rankLine,
-        verifyLine,
-      ].join("\n"),
-    )
-    .setThumbnail(fullUser.displayAvatarURL({ size: 256 }))
-    .addFields(
-      {
-        name: "Joined",
-        value: joinTs ? `<t:${joinTs}:D>\n<t:${joinTs}:R>` : "Unknown",
-        inline: true,
-      },
-      {
-        name: "Created",
-        value: `<t:${createTs}:D>\n<t:${createTs}:R>`,
-        inline: true,
-      },
-      {
-        name: "Status",
-        value: `**${statusLabel}**`,
-        inline: true,
-      },
-    )
-    .setFooter({ text: `ID: ${target.id}` })
-    .setTimestamp();
+  const container = new ContainerBuilder();
 
+  // Header
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      `## ${statusEmoji}  ${target.nickname ?? fullUser.username}\n` +
+      `<@${target.id}>  ·  \`${fullUser.tag}\`\n\n` +
+      `${rankLine}\n${verifyLine}`,
+    ),
+  );
+  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+  // Details
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      [
+        `**Joined:** ${joinTs ? `<t:${joinTs}:D>  (<t:${joinTs}:R>)` : "Unknown"}`,
+        `**Created:** <t:${createTs}:D>  (<t:${createTs}:R>)`,
+        `**Status:** **${statusLabel}**`,
+      ].join("\n"),
+    ),
+  );
+
+  // Roles
   if (topRoles.length > 0) {
-    embed.addFields({
-      name: `Roles (${target.roles.cache.size - 1})`,
-      value: topRoles.map((r) => `<@&${r.id}>`).join("  "),
-      inline: false,
-    });
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `**Roles (${target.roles.cache.size - 1}):** ${topRoles.map((r) => `<@&${r.id}>`).join("  ")}`,
+      ),
+    );
   }
 
-  const bannerURL = fullUser.bannerURL({ size: 1024 });
-  if (bannerURL) embed.setImage(bannerURL);
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`-# ID: ${target.id}`),
+  );
 
-  return embed;
+  return container;
 }

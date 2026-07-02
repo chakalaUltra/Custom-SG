@@ -1,4 +1,5 @@
 import type { Client, GuildTextBasedChannel } from "discord.js";
+import { ContainerBuilder, MessageFlags } from "discord.js";
 import { logger } from "../lib/logger.js";
 
 const STORE_CHANNEL_ID = "1501175897678413836";
@@ -294,14 +295,17 @@ export async function saveModLogsChannel(
 
 export async function sendModLog(
   guildId: string,
-  embed: object,
+  container: ContainerBuilder,
 ): Promise<void> {
   const channelId = modLogsChannelStore.get(guildId);
   if (!channelId || !discordClient) return;
   try {
     const ch = await discordClient.channels.fetch(channelId);
     if (!ch || !ch.isTextBased() || ch.isDMBased()) return;
-    await (ch as GuildTextBasedChannel).send({ embeds: [embed as never] });
+    await (ch as GuildTextBasedChannel).send({
+      flags: MessageFlags.IsComponentsV2,
+      components: [container],
+    } as never);
   } catch (err) {
     logger.warn({ err, guildId, channelId }, "Failed to send mod log");
   }
