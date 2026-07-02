@@ -12,7 +12,7 @@ import { E } from "../emojis.js";
 
 export const COMMAND_NAME = "add-perm";
 
-const ADMIN_ONLY_COMMANDS = ["add-perm", "modlogs"];
+const ADMIN_ONLY_COMMANDS = ["add-perm", "modlogs", "wizard"];
 
 const GRANTABLE_COMMANDS = [
   "verify-roles",

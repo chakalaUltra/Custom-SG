@@ -10,6 +10,7 @@ import {
   StringSelectMenuOptionBuilder,
   StringSelectMenuInteraction,
   MessageFlags,
+  type MessageActionRowComponentBuilder,
   type GuildTextBasedChannel,
   Message,
 } from "discord.js";
@@ -195,7 +196,7 @@ function buildCategoryContainer(sectionId: string): ContainerBuilder {
   return container;
 }
 
-function buildSelectMenu(selectedId?: string): ActionRowBuilder {
+function buildSelectMenu(selectedId?: string): ActionRowBuilder<MessageActionRowComponentBuilder> {
   const menu = new StringSelectMenuBuilder()
     .setCustomId("help:category")
     .setPlaceholder(selectedId ? `Viewing: ${SECTIONS.find(s => s.id === selectedId)?.label}` : "Browse a category…");
@@ -210,7 +211,7 @@ function buildSelectMenu(selectedId?: string): ActionRowBuilder {
     menu.addOptions(option);
   }
 
-  return new ActionRowBuilder().addComponents(menu) as ActionRowBuilder;
+  return new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(menu);
 }
 
 export const data = new SlashCommandBuilder()

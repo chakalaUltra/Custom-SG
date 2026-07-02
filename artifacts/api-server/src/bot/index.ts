@@ -7,6 +7,9 @@ import {
   Collection,
   type ChatInputCommandInteraction,
   type StringSelectMenuInteraction,
+  type ButtonInteraction,
+  type RoleSelectMenuInteraction,
+  type ChannelSelectMenuInteraction,
 } from "discord.js";
 import { logger } from "../lib/logger.js";
 import { initStore } from "./store.js";
@@ -34,6 +37,12 @@ import * as rankRolesCmd from "./commands/rank-roles.js";
 import * as userinfoCmd from "./commands/userinfo.js";
 import * as viewPermCmd from "./commands/view-perm.js";
 import * as helpCmd from "./commands/help.js";
+import * as wizardCmd from "./commands/wizard.js";
+import {
+  handleWizardButton,
+  handleWizardRoleSelect,
+  handleWizardChannelSelect,
+} from "./commands/wizard.js";
 
 interface Command {
   data: { toJSON: () => unknown };
@@ -62,6 +71,7 @@ commands.set("rank-roles", rankRolesCmd);
 commands.set("userinfo", userinfoCmd);
 commands.set("view-perm", viewPermCmd);
 commands.set("help", helpCmd);
+commands.set("wizard", wizardCmd);
 
 export function startBot(): void {
   const token = process.env["DISCORD_BOT_TOKEN"];
@@ -102,6 +112,40 @@ export function startBot(): void {
         }
       }
       return;
+    }
+
+    if (interaction.isButton()) {
+      if (interaction.customId.startsWith("wizard:")) {
+        try {
+          await handleWizardButton(interaction as ButtonInteraction);
+        } catch (err) {
+          logger.error({ err }, "Error handling wizard button");
+          await (interaction as ButtonInteraction).reply({ content: "An error occurred.", ephemeral: true }).catch(() => {});
+        }
+        return;
+      }
+    }
+
+    if (interaction.isRoleSelectMenu()) {
+      if (interaction.customId.startsWith("wizard:")) {
+        try {
+          await handleWizardRoleSelect(interaction as RoleSelectMenuInteraction);
+        } catch (err) {
+          logger.error({ err }, "Error handling wizard role select");
+        }
+        return;
+      }
+    }
+
+    if (interaction.isChannelSelectMenu()) {
+      if (interaction.customId.startsWith("wizard:")) {
+        try {
+          await handleWizardChannelSelect(interaction as ChannelSelectMenuInteraction);
+        } catch (err) {
+          logger.error({ err }, "Error handling wizard channel select");
+        }
+        return;
+      }
     }
 
     if (interaction.isStringSelectMenu()) {
