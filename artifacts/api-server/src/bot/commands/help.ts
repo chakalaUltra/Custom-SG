@@ -122,7 +122,7 @@ function buildOverviewContainer(): ContainerBuilder {
 
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `## ${E.info}  SG Overseer — Command Reference\n` +
+      `## ${E.info}  Vanguard Senate — Command Reference\n` +
       `-# Use \`/command\` (slash) or \`$command\` (prefix)  ·  Run \`$<command>\` with no args for a full guide`,
     ),
   );

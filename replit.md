@@ -1,6 +1,6 @@
-# SG Overseer
+# Vanguard Senate
 
-A custom Discord moderation bot for the SG server. Handles member verification, mainer status, moderation actions, and role-based command permissions. Uses a Discord channel as a persistent data store.
+A custom Discord moderation bot for the Vanguard Senate server. Handles member verification, mainer status, moderation actions, and role-based command permissions. Uses a Discord channel as a persistent data store.
 
 ## Run & Operate
 

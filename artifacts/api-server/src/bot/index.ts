@@ -81,7 +81,7 @@ export function startBot(): void {
   });
 
   client.once("clientReady", async (readyClient) => {
-    logger.info({ tag: readyClient.user.tag }, "SG Overseer is online");
+    logger.info({ tag: readyClient.user.tag }, "Vanguard Senate is online");
     await initStore(client);
     await registerSlashCommands(token, readyClient.user.id);
   });
