@@ -186,7 +186,7 @@ function buildCategoryContainer(sectionId: string): ContainerBuilder {
 
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `-# ${E.info}  Viewing **${section.label}** · Switch category below or run \`$<command>\` for a detailed guide`,
+      `-# ${E.info}  Viewing **${section.label}** · Switch category below or run \`;<command>\` for a detailed guide`,
     ),
   );
 
@@ -204,8 +204,7 @@ function buildSelectMenu(selectedId?: string): ActionRowBuilder {
     const option = new StringSelectMenuOptionBuilder()
       .setValue(section.id)
       .setLabel(section.label)
-      .setDescription(section.description.slice(0, 100))
-      .setEmoji({ id: section.emojiRaw });
+      .setDescription(section.description.slice(0, 100));
 
     if (section.id === selectedId) option.setDefault(true);
     menu.addOptions(option);
