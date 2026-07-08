@@ -6,15 +6,17 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
+  SeparatorSpacingSize,
   MessageFlags,
 } from "discord.js";
 import { getAllModActions } from "../store.js";
 import { canRunCommand } from "../permissions.js";
 import { E } from "../emojis.js";
+import { C } from "../colors.js";
 
 export const COMMAND_NAME = "leaderboard";
 
-const MEDALS = ["🥇", "🥈", "🥉"];
+const RANK_BADGES = ["🥇", "🥈", "🥉"];
 
 export const data = new SlashCommandBuilder()
   .setName(COMMAND_NAME)
@@ -61,36 +63,40 @@ export async function runLeaderboard(
     .slice(0, 12);
 
   if (sorted.length === 0) {
+    const container = new ContainerBuilder().setAccentColor(C.yellow);
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `## ${E.chart}  Staff Leaderboard\n-# No mod actions recorded yet`,
+      ),
+    );
     await replyFn({
       flags: MessageFlags.IsComponentsV2,
-      components: [
-        new ContainerBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`## ${E.chart} Staff Leaderboard\nNo mod actions have been recorded yet.`),
-        ),
-      ],
+      components: [container],
       allowedMentions: { parse: [], repliedUser: false },
     });
     return;
   }
 
-  const container = new ContainerBuilder();
+  const topCount = sorted[0]![1].count;
+  const container = new ContainerBuilder().setAccentColor(C.yellow);
+
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`## ${E.chart} Staff Leaderboard`),
+    new TextDisplayBuilder().setContent(
+      `## ${E.chart}  Staff Leaderboard\n-# ${sorted.length} staff · ${actions.length} total actions`,
+    ),
   );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
 
   const lines = sorted.map(([, data], i) => {
-    const medal = MEDALS[i] ?? `**${i + 1}.**`;
-    const bar = buildBar(data.count, sorted[0]![1].count);
-    return `${medal} **${data.tag}** — ${data.count} action${data.count === 1 ? "" : "s"}\n-# ${bar}`;
+    const badge = RANK_BADGES[i] ?? `**#${i + 1}**`;
+    const bar = buildBar(data.count, topCount);
+    return `${badge}  **${data.tag}** — ${data.count} action${data.count === 1 ? "" : "s"}\n-# ${bar}`;
   });
 
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(lines.join("\n\n")),
-  );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`-# ${sorted.length} staff member${sorted.length === 1 ? "" : "s"} · ${actions.length} total actions`),
   );
 
   await replyFn({
@@ -101,7 +107,7 @@ export async function runLeaderboard(
 }
 
 function buildBar(count: number, max: number): string {
-  const filled = Math.round((count / max) * 10);
-  const empty = 10 - filled;
+  const filled = Math.round((count / max) * 12);
+  const empty = 12 - filled;
   return "█".repeat(filled) + "░".repeat(empty);
 }

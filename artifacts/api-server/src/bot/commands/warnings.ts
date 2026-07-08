@@ -6,11 +6,13 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
+  SeparatorSpacingSize,
   MessageFlags,
 } from "discord.js";
 import { getWarnings } from "../store.js";
 import { canRunCommand } from "../permissions.js";
 import { E } from "../emojis.js";
+import { C } from "../colors.js";
 
 export const COMMAND_NAME = "warnings";
 
@@ -51,49 +53,51 @@ export async function runWarnings(
   const warnings = getWarnings(guildId, targetId);
 
   if (warnings.length === 0) {
+    const container = new ContainerBuilder().setAccentColor(C.yellow);
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `## ${E.check}  Warnings — ${targetTag}\n-# No warnings on record`,
+      ),
+    );
     await replyFn({
       flags: MessageFlags.IsComponentsV2,
-      components: [
-        new ContainerBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`## ${E.check} Warnings for ${targetTag}\nNo warnings on record.`),
-        ),
-      ],
+      components: [container],
       allowedMentions: { parse: [], repliedUser: false },
     });
     return;
   }
 
-  const container = new ContainerBuilder();
+  const container = new ContainerBuilder().setAccentColor(C.yellow);
+
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`## ${E.info} Warnings for ${targetTag}`),
+    new TextDisplayBuilder().setContent(
+      `## ${E.bell}  Warnings — ${targetTag}\n-# ${warnings.length} warning${warnings.length === 1 ? "" : "s"} on record`,
+    ),
   );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
 
   for (let i = 0; i < warnings.length; i++) {
-    const w = warnings[i];
-    const date = new Date(w.timestamp);
-    const dateStr = date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-    const timeStr = date.toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const w = warnings[i]!;
+    const ts = Math.floor(w.timestamp / 1000);
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `**[${i + 1}]** ${w.reason}\n-# ${dateStr} at ${timeStr} — by ${w.moderatorTag}`,
+        `**[${i + 1}]**  ${w.reason}\n-# <t:${ts}:f>  ·  by ${w.moderatorTag}`,
       ),
     );
     if (i < warnings.length - 1) {
-      container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+      container.addSeparatorComponents(
+        new SeparatorBuilder().setDivider(false).setSpacing(SeparatorSpacingSize.Small),
+      );
     }
   }
 
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`-# ${warnings.length} warning${warnings.length === 1 ? "" : "s"} total`),
+    new TextDisplayBuilder().setContent(`-# ◈  ${warnings.length} warning${warnings.length === 1 ? "" : "s"} total  ·  <@${targetId}>`),
   );
 
   await replyFn({

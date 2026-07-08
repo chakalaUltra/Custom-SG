@@ -2,8 +2,10 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
+  SeparatorSpacingSize,
   MessageFlags,
 } from "discord.js";
+import { C } from "./colors.js";
 
 export interface ContainerPayload {
   flags: number;
@@ -16,19 +18,21 @@ export function buildActionContainer(
   lines: string[],
   footer: string,
 ): ContainerPayload {
-  const container = new ContainerBuilder();
+  const container = new ContainerBuilder().setAccentColor(C.yellow);
+
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(`## ${title}`),
   );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-  for (const line of lines) {
-    container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(line),
-    );
-  }
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`-# ${footer}`),
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
   );
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(lines.map((l) => `> ${l}`).join("\n")),
+  );
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`-# ◈  ${footer}`),
+  );
+
   return {
     flags: MessageFlags.IsComponentsV2,
     components: [container],

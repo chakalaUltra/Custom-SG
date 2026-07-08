@@ -6,11 +6,13 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
+  SeparatorSpacingSize,
   MessageFlags,
 } from "discord.js";
 import { getModActionsByModerator, type ModActionType } from "../store.js";
 import { canRunCommand } from "../permissions.js";
 import { E } from "../emojis.js";
+import { C } from "../colors.js";
 
 export const COMMAND_NAME = "modinfo";
 
@@ -89,22 +91,28 @@ export async function runModinfo(
     "verify", "mainer", "warn", "dewarn", "mute", "unmute", "kick", "ban", "unban", "role", "rank",
   ];
 
-  const container = new ContainerBuilder();
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`## ${E.chart} Mod Stats — ${moderatorTag}`),
-  );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-  const lines = types
-    .map((t) => `${ACTION_EMOJI[t]} **${ACTION_LABELS[t]}:** ${counts[t] ?? 0}`)
-    .join("\n");
+  const container = new ContainerBuilder().setAccentColor(C.yellow);
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(lines),
+    new TextDisplayBuilder().setContent(
+      `## ${E.chart}  Mod Stats — ${moderatorTag}\n-# ${total} total action${total === 1 ? "" : "s"} on record`,
+    ),
   );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
+
+  const statRows = types.map((t) => {
+    const count = counts[t] ?? 0;
+    return `> ${ACTION_EMOJI[t]}  **${ACTION_LABELS[t]}:** ${count}`;
+  });
+
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`-# ${total} total action${total === 1 ? "" : "s"} on record`),
+    new TextDisplayBuilder().setContent(statRows.join("\n")),
+  );
+
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`-# ◈  <@${moderatorId}>`),
   );
 
   await replyFn({

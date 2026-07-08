@@ -2,9 +2,11 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
+  SeparatorSpacingSize,
 } from "discord.js";
 import { sendModLog } from "./store.js";
 import { E } from "./emojis.js";
+import { C } from "./colors.js";
 
 const ACTION_EMOJI: Record<string, string> = {
   warn:   E.info,
@@ -31,29 +33,26 @@ export async function dispatchModLog(
   const emoji = ACTION_EMOJI[type] ?? E.message;
   const ts = Math.floor(Date.now() / 1000);
 
-  const container = new ContainerBuilder();
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`## ${emoji}  ${type.toUpperCase()}`),
-  );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  const container = new ContainerBuilder().setAccentColor(C.yellow);
+
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `${E.info}  **User:** ${targetTag} (\`${targetId}\`)\n` +
-      `${E.sliders}  **Moderator:** ${moderatorTag}`,
+      `## ${emoji}  ${type.toUpperCase()}\n-# Moderation Log  ·  <t:${ts}:f>`,
     ),
   );
-  if (opts?.reason) {
-    container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${E.bell}  **Reason:** ${opts.reason}`),
-    );
-  }
-  if (opts?.extra) {
-    container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${E.message}  **Details:** ${opts.extra}`),
-    );
-  }
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
+
+  const fields = [
+    `${E.info}  **Target** — ${targetTag}  \`${targetId}\``,
+    `${E.userConfig}  **Moderator** — ${moderatorTag}`,
+  ];
+  if (opts?.reason) fields.push(`${E.bell}  **Reason** — ${opts.reason}`);
+  if (opts?.extra)  fields.push(`${E.message}  **Details** — ${opts.extra}`);
+
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`-# <t:${ts}:f>`),
+    new TextDisplayBuilder().setContent(fields.map((f) => `> ${f}`).join("\n")),
   );
 
   await sendModLog(guildId, container);

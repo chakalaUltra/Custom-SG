@@ -9,6 +9,7 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
+  SeparatorSpacingSize,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -27,6 +28,7 @@ import {
   getModLogsChannelId,
 } from "../store.js";
 import { E } from "../emojis.js";
+import { C } from "../colors.js";
 
 export const COMMAND_NAME = "wizard";
 
@@ -48,27 +50,34 @@ function key(guildId: string, userId: string): string {
 // ─── Container builders ───────────────────────────────────────────────────────
 
 function buildWelcome(): ContainerBuilder {
-  const c = new ContainerBuilder();
+  const c = new ContainerBuilder().setAccentColor(C.yellow);
+
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `## ${E.sliders}  Vanguard Senate — Setup Wizard\n` +
-      `-# Walk through your server configuration step by step`,
+      `## ${E.sliders}  Setup Wizard\n-# Vanguard Senate — walk through your server configuration step by step`,
     ),
   );
-  c.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  c.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
       [
-        `${E.shield}  **Verification Roles** — set Verified, Unverified, and Mainer roles`,
-        `${E.message}  **Mod Log Channel** — choose where mod actions are logged`,
-        `${E.plus}  **Role Permissions** — grant roles access to specific bot commands`,
+        `> ${E.shield}  **Step 1** — Verification Roles`,
+        `> -# Set the Verified, Unverified, and Mainer roles`,
+        `> ${E.message}  **Step 2** — Mod Log Channel`,
+        `> -# Choose where mod actions are logged`,
+        `> ${E.plus}  **Step 3** — Role Permissions`,
+        `> -# Grant roles access to specific bot commands`,
       ].join("\n"),
     ),
   );
-  c.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  c.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `-# Each step has a Skip button — you can always configure things later with the individual commands`,
+      `-# ◈  Each step has a Skip button — configure individually later if needed`,
     ),
   );
   c.addActionRowComponents(
@@ -87,29 +96,32 @@ function buildWelcome(): ContainerBuilder {
 }
 
 function buildVerifyStep(state: WizardState): ContainerBuilder {
-  const c = new ContainerBuilder();
+  const c = new ContainerBuilder().setAccentColor(C.yellow);
+
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
       `## ${E.shield}  Step 1 / 3 — Verification Roles\n` +
-      `-# These roles are used by \`/verify\` and \`/mainer\``,
+      `-# Used by \`/verify\` and \`/mainer\``,
     ),
   );
-  c.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  c.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
 
   // Show confirmed selections
-  const done: string[] = [];
-  if (state.verifiedRoleId)   done.push(`${E.check}  **Verified:** <@&${state.verifiedRoleId}>`);
-  if (state.unverifiedRoleId) done.push(`${E.check}  **Unverified:** <@&${state.unverifiedRoleId}>`);
-  if (state.mainerRoleId)     done.push(`${E.check}  **Mainer:** <@&${state.mainerRoleId}>`);
-  if (done.length) {
-    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(done.join("\n")));
+  const confirmed: string[] = [];
+  if (state.verifiedRoleId)   confirmed.push(`> ${E.check}  **Verified** — <@&${state.verifiedRoleId}>`);
+  if (state.unverifiedRoleId) confirmed.push(`> ${E.check}  **Unverified** — <@&${state.unverifiedRoleId}>`);
+  if (state.mainerRoleId)     confirmed.push(`> ${E.check}  **Mainer** — <@&${state.mainerRoleId}>`);
+  if (confirmed.length) {
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(confirmed.join("\n")));
   }
 
   // Show next role select
   if (!state.verifiedRoleId) {
     c.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `${E.info}  Select the **Verified** role — given to members when they pass verification.`,
+        `> ${E.info}  Select the **Verified** role — given to members when they pass verification`,
       ),
     );
     c.addActionRowComponents(
@@ -122,7 +134,7 @@ function buildVerifyStep(state: WizardState): ContainerBuilder {
   } else if (!state.unverifiedRoleId) {
     c.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `${E.info}  Select the **Unverified** role — removed when a member is verified.`,
+        `> ${E.info}  Select the **Unverified** role — removed when a member is verified`,
       ),
     );
     c.addActionRowComponents(
@@ -135,7 +147,7 @@ function buildVerifyStep(state: WizardState): ContainerBuilder {
   } else if (!state.mainerRoleId) {
     c.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `${E.info}  Select the **Mainer** role — given to certified mainstay members.`,
+        `> ${E.info}  Select the **Mainer** role — given to certified mainstay members`,
       ),
     );
     c.addActionRowComponents(
@@ -159,17 +171,20 @@ function buildVerifyStep(state: WizardState): ContainerBuilder {
 }
 
 function buildModlogsStep(): ContainerBuilder {
-  const c = new ContainerBuilder();
+  const c = new ContainerBuilder().setAccentColor(C.yellow);
+
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
       `## ${E.message}  Step 2 / 3 — Mod Log Channel\n` +
-      `-# Pick the channel where moderation actions are logged`,
+      `-# Pick the channel where moderation actions are posted`,
     ),
   );
-  c.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  c.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `${E.info}  Bans, kicks, warns, mutes, and other actions will be posted here as mod log entries.`,
+      `> ${E.info}  Bans, kicks, warns, mutes, and other actions will be posted here as mod log entries`,
     ),
   );
   c.addActionRowComponents(
@@ -192,24 +207,30 @@ function buildModlogsStep(): ContainerBuilder {
 }
 
 function buildPermissionsStep(): ContainerBuilder {
-  const c = new ContainerBuilder();
+  const c = new ContainerBuilder().setAccentColor(C.yellow);
+
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
       `## ${E.plus}  Step 3 / 3 — Role Permissions\n` +
       `-# Grant non-admin roles access to specific bot commands`,
     ),
   );
-  c.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  c.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `By default every command requires Administrator. Use \`/add-perm\` or \`;add-perm\` to grant a role access to individual commands.\n\n` +
-      `-# Example: \`;add-perm @Moderator warn\`  —  lets @Moderator run the warn command`,
+      `> ${E.info}  By default every command requires Administrator\n` +
+      `> ${E.editCheck}  Use \`/add-perm\` or \`v!add-perm\` to grant roles command access\n` +
+      `> -# Example: \`v!add-perm @Moderator warn\``,
     ),
   );
-  c.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  c.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `-# ${E.info}  \`/wizard\` and \`/add-perm\` are strictly admin-only and cannot be granted to any role`,
+      `-# ◈  \`/wizard\` and \`/add-perm\` are strictly admin-only and cannot be granted to any role`,
     ),
   );
   c.addActionRowComponents(
@@ -228,57 +249,60 @@ function buildPermissionsStep(): ContainerBuilder {
 }
 
 function buildDone(state: WizardState, guildId: string): ContainerBuilder {
-  const c = new ContainerBuilder();
+  const c = new ContainerBuilder().setAccentColor(C.yellow);
+
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
       `## ${E.check}  Setup Complete\n-# Vanguard Senate is configured and ready`,
     ),
   );
-  c.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  c.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
 
   const lines: string[] = [];
 
   if (state.verifiedRoleId && state.unverifiedRoleId && state.mainerRoleId) {
     lines.push(
-      `${E.shield}  **Verification Roles** — configured\n` +
-      `-# Verified <@&${state.verifiedRoleId}> · Unverified <@&${state.unverifiedRoleId}> · Mainer <@&${state.mainerRoleId}>`,
+      `> ${E.shield}  **Verification Roles** — configured\n` +
+      `> -# Verified <@&${state.verifiedRoleId}> · Unverified <@&${state.unverifiedRoleId}> · Mainer <@&${state.mainerRoleId}>`,
     );
   } else {
     const ex = getVerifyRoles(guildId);
     if (ex) {
       lines.push(
-        `${E.shield}  **Verification Roles** — existing config kept\n` +
-        `-# Verified <@&${ex.verifiedRoleId}> · Unverified <@&${ex.unverifiedRoleId}> · Mainer <@&${ex.mainerRoleId}>`,
+        `> ${E.shield}  **Verification Roles** — existing config kept\n` +
+        `> -# Verified <@&${ex.verifiedRoleId}> · Unverified <@&${ex.unverifiedRoleId}> · Mainer <@&${ex.mainerRoleId}>`,
       );
     } else {
-      lines.push(`${E.dots}  **Verification Roles** — not configured · run \`/verify-roles\` to set up`);
+      lines.push(`> ${E.dots}  **Verification Roles** — not configured · run \`/verify-roles\` to set up`);
     }
   }
 
   if (state.modlogsChannelId) {
-    lines.push(`${E.message}  **Mod Log Channel** — <#${state.modlogsChannelId}>`);
+    lines.push(`> ${E.message}  **Mod Log Channel** — <#${state.modlogsChannelId}>`);
   } else {
     const ex = getModLogsChannelId(guildId);
     if (ex) {
-      lines.push(`${E.message}  **Mod Log Channel** — <#${ex}> *(existing)*`);
+      lines.push(`> ${E.message}  **Mod Log Channel** — <#${ex}> *(existing)*`);
     } else {
-      lines.push(`${E.dots}  **Mod Log Channel** — not configured · run \`/modlogs\` to set up`);
+      lines.push(`> ${E.dots}  **Mod Log Channel** — not configured · run \`/modlogs\` to set up`);
     }
   }
 
-  lines.push(`${E.plus}  **Role Permissions** — use \`/add-perm\` or \`;add-perm\` to grant roles command access`);
+  lines.push(`> ${E.plus}  **Role Permissions** — use \`/add-perm\` or \`v!add-perm\` to grant roles command access`);
 
   c.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(lines.join("\n\n")),
+    new TextDisplayBuilder().setContent(lines.join("\n")),
   );
   return c;
 }
 
 function buildCancelled(): ContainerBuilder {
-  const c = new ContainerBuilder();
+  const c = new ContainerBuilder().setAccentColor(C.yellow);
   c.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `## ${E.cross}  Setup Cancelled\n-# No changes were made · run \`/wizard\` to start again`,
+      `## ${E.cross}  Setup Cancelled\n-# No changes were made  ·  Run \`/wizard\` to start again`,
     ),
   );
   return c;

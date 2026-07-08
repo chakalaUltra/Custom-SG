@@ -2,10 +2,12 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
+  SeparatorSpacingSize,
   MessageFlags,
   Message,
 } from "discord.js";
 import { E } from "./emojis.js";
+import { C } from "./colors.js";
 
 type Category = "verification" | "warning" | "moderation" | "role" | "info" | "config";
 
@@ -173,7 +175,7 @@ const GUIDES: Record<string, Guide> = {
     description: "Toggles a role on a user — adds it if they don't have it, removes it if they do.",
     usage: "v!role <@user> <role name or ID>",
     args: [
-      { name: "@user",       desc: "Target user (mention or ID)", required: true },
+      { name: "@user",        desc: "Target user (mention or ID)", required: true },
       { name: "role name/ID", desc: "Role name (case-insensitive), mention, or role ID", required: true },
     ],
     example: "v!role @JohnDoe Trial Staff",
@@ -240,50 +242,58 @@ export async function replyWithGuide(message: Message, commandName: string): Pro
 
   const categoryLabel = CATEGORY_LABELS[guide.category];
 
-  const argsBlock = guide.args.length === 0
-    ? null
-    : guide.args
-        .map((a) => {
-          const badge = a.required ? "`required`" : "`optional`";
-          return `${a.required ? E.editCheck : E.dots}  **${a.name}** ${badge}\n-# ${a.desc}`;
-        })
-        .join("\n");
+  const container = new ContainerBuilder().setAccentColor(C.yellow);
 
-  const container = new ContainerBuilder();
+  // Header
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `## ${guide.emoji}  ;${commandName}\n-# ${guide.description}`,
+      `## ${guide.emoji}  v!${commandName}\n-# ${categoryLabel}  ·  ${guide.description}`,
     ),
   );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
+
+  // Usage
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `${E.info}  **Usage**\n\`\`\`\n${guide.usage}\n\`\`\``,
+      `### ${E.info}  Usage\n\`\`\`\n${guide.usage}\n\`\`\``,
     ),
   );
 
-  if (argsBlock) {
+  // Arguments
+  if (guide.args.length > 0) {
+    const argRows = guide.args.map((a) => {
+      const badge = a.required ? "`required`" : "`optional`";
+      return `> ${a.required ? E.editCheck : E.dots}  **${a.name}** ${badge}\n> -# ${a.desc}`;
+    });
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${E.sliders}  **Arguments**\n${argsBlock}`),
+      new TextDisplayBuilder().setContent(
+        `### ${E.sliders}  Arguments\n${argRows.join("\n")}`,
+      ),
     );
   }
 
+  // Example
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `${E.check}  **Example**\n\`\`\`\n${guide.example}\n\`\`\``,
+      `### ${E.check}  Example\n\`\`\`\n${guide.example}\n\`\`\``,
     ),
   );
 
+  // Note
   if (guide.note) {
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${E.bell}  **Note**\n${guide.note}`),
+      new TextDisplayBuilder().setContent(`### ${E.bell}  Note\n${guide.note}`),
     );
   }
 
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `-# ${categoryLabel}  ·  Angle brackets < > mark required arguments`,
+      `-# ◈  ${categoryLabel}  ·  Angle brackets < > mark required arguments`,
     ),
   );
 

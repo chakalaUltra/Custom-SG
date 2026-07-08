@@ -28,7 +28,6 @@ interface CommandEntry {
 interface Section {
   id: string;
   emoji: string;
-  emojiRaw: string;
   label: string;
   color: number;
   description: string;
@@ -39,23 +38,21 @@ const SECTIONS: Section[] = [
   {
     id: "verification",
     emoji: E.shield,
-    emojiRaw: "1000091713",
     label: "Verification",
     color: C.catVerification,
-    description: "Commands for verifying members and granting status roles.",
+    description: "Verify members and grant status roles.",
     commands: [
-      { slash: "/verify-roles",                          desc: "Set which roles count as Verified and Mainer" },
-      { slash: "/verify",  prefix: "v!verify @user",     desc: "Grant a user the Verified role" },
-      { slash: "/mainer",  prefix: "v!mainer @user",     desc: "Promote a verified user to Mainer" },
+      { slash: "/verify-roles",                         desc: "Set which roles count as Verified and Mainer" },
+      { slash: "/verify",  prefix: "v!verify @user",    desc: "Grant a user the Verified role" },
+      { slash: "/mainer",  prefix: "v!mainer @user",    desc: "Promote a verified user to Mainer" },
     ],
   },
   {
     id: "warnings",
     emoji: E.bell,
-    emojiRaw: "1000091711",
     label: "Warnings",
     color: C.catWarning,
-    description: "Issue, view, and remove warnings from a user's record.",
+    description: "Issue, view, and remove warnings.",
     commands: [
       { slash: "/warn",     prefix: "v!warn @user <reason>",  desc: "Issue a warning to a user" },
       { slash: "/warnings", prefix: "v!warnings @user",       desc: "View all warnings on a user's record" },
@@ -65,10 +62,9 @@ const SECTIONS: Section[] = [
   {
     id: "moderation",
     emoji: E.cross,
-    emojiRaw: "1000091723",
     label: "Moderation",
     color: C.catModeration,
-    description: "Core moderation actions — mute, kick, ban, and unban.",
+    description: "Mute, kick, ban, and unban.",
     commands: [
       { slash: "/mute",   prefix: "v!mute @user <duration> <reason>",  desc: "Timeout a user for a set duration" },
       { slash: "/unmute", prefix: "v!unmute @user <reason>",           desc: "Remove an active timeout" },
@@ -80,23 +76,21 @@ const SECTIONS: Section[] = [
   {
     id: "roles",
     emoji: E.chart,
-    emojiRaw: "1000091716",
     label: "Roles & Ranks",
     color: C.catRole,
-    description: "Give and remove roles, assign ranks, and configure rank tiers.",
+    description: "Toggle roles, assign ranks, configure rank tiers.",
     commands: [
-      { slash: "/role",       prefix: "v!role @user <role>",                       desc: "Toggle a role on a user" },
-      { slash: "/rank",       prefix: "v!rank @user <stage> <mid> <extra>",       desc: "Assign a full rank to a user" },
-      { slash: "/rank-roles",                                                      desc: "Configure roles for each rank tier" },
+      { slash: "/role",       prefix: "v!role @user <role>",                 desc: "Toggle a role on a user" },
+      { slash: "/rank",       prefix: "v!rank @user <stage> <mid> <extra>",  desc: "Assign a full rank to a user" },
+      { slash: "/rank-roles",                                                 desc: "Configure roles for each rank tier" },
     ],
   },
   {
     id: "info",
     emoji: E.info,
-    emojiRaw: "1000091732",
     label: "Information",
     color: C.catInfo,
-    description: "Look up user info, mod history, and staff statistics.",
+    description: "User profiles, mod history, staff stats.",
     commands: [
       { slash: "/userinfo",    prefix: "v!userinfo @user",   desc: "View a user's full info card" },
       { slash: "/modinfo",     prefix: "v!modinfo @user",    desc: "View all mod actions against a user" },
@@ -106,10 +100,9 @@ const SECTIONS: Section[] = [
   {
     id: "config",
     emoji: E.sliders,
-    emojiRaw: "1000091714",
     label: "Configuration",
     color: C.catConfig,
-    description: "Manage bot permissions, role access, and log channels.",
+    description: "Permissions, role access, log channels.",
     commands: [
       { slash: "/add-perm",  prefix: "v!add-perm @role <cmd>",  desc: "Grant a role access to a command" },
       { slash: "/view-perm", prefix: "v!view-perm @role",        desc: "List all permissions a role has" },
@@ -123,32 +116,30 @@ function buildOverviewContainer(): ContainerBuilder {
 
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `## ${E.info}  Vanguard Senate — Command Reference\n` +
-      `-# Use \`/command\` (slash) or \`v!command\` (prefix)  ·  Run \`v!<command>\` with no args for a full guide`,
+      `## ${E.info}  Vanguard Senate\n` +
+      `-# Command Reference  ·  \`/command\`  or  \`v!command\``,
     ),
   );
-
   container.addSeparatorComponents(
     new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
   );
 
   const overviewLines = SECTIONS.map((s) => {
     const count = s.commands.length;
-    return `${s.emoji}  **${s.label}** — ${count} command${count === 1 ? "" : "s"}\n-# ${s.description}`;
+    return `> ${s.emoji}  **${s.label}** — ${count} command${count === 1 ? "" : "s"}\n> -# ${s.description}`;
   });
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(overviewLines.join("\n\n")),
+    new TextDisplayBuilder().setContent(overviewLines.join("\n")),
   );
-
   container.addSeparatorComponents(
     new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
   );
-
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`-# ${E.refresh}  Select a category below to browse its commands`),
+    new TextDisplayBuilder().setContent(
+      `-# ${E.refresh}  Pick a category below  ·  Run \`v!<command>\` with no args for a full guide`,
+    ),
   );
-
   container.addActionRowComponents(buildSelectMenu());
 
   return container;
@@ -165,7 +156,6 @@ function buildCategoryContainer(sectionId: string): ContainerBuilder {
       `## ${section.emoji}  ${section.label}\n-# ${section.description}`,
     ),
   );
-
   container.addSeparatorComponents(
     new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
   );
@@ -174,23 +164,20 @@ function buildCategoryContainer(sectionId: string): ContainerBuilder {
     const prefixLine = cmd.prefix
       ? `\`${cmd.slash}\`  ·  \`${cmd.prefix}\``
       : `\`${cmd.slash}\`  ·  *slash only*`;
-    return `${E.editCheck}  ${prefixLine}\n-# ${cmd.desc}`;
+    return `> ${E.editCheck}  ${prefixLine}\n> -# ${cmd.desc}`;
   });
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(cmdLines.join("\n\n")),
+    new TextDisplayBuilder().setContent(cmdLines.join("\n")),
   );
-
   container.addSeparatorComponents(
     new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
   );
-
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `-# ${E.info}  Viewing **${section.label}** · Switch category below or run \`;<command>\` for a detailed guide`,
+      `-# ${E.info}  Viewing **${section.label}**  ·  Switch category below or run \`v!<command>\` for a full guide`,
     ),
   );
-
   container.addActionRowComponents(buildSelectMenu(sectionId));
 
   return container;
@@ -199,7 +186,7 @@ function buildCategoryContainer(sectionId: string): ContainerBuilder {
 function buildSelectMenu(selectedId?: string): ActionRowBuilder<MessageActionRowComponentBuilder> {
   const menu = new StringSelectMenuBuilder()
     .setCustomId("help:category")
-    .setPlaceholder(selectedId ? `Viewing: ${SECTIONS.find(s => s.id === selectedId)?.label}` : "Browse a category…");
+    .setPlaceholder(selectedId ? `Viewing: ${SECTIONS.find((s) => s.id === selectedId)?.label}` : "Browse a category…");
 
   for (const section of SECTIONS) {
     const option = new StringSelectMenuOptionBuilder()

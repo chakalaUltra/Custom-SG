@@ -6,6 +6,7 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
+  SeparatorSpacingSize,
   MessageFlags,
   Client,
   User,
@@ -13,6 +14,7 @@ import {
 import { getVerifyRoles, getUserRank, getVerifierForUser } from "../store.js";
 import { canRunCommand } from "../permissions.js";
 import { E } from "../emojis.js";
+import { C } from "../colors.js";
 
 export const COMMAND_NAME = "userinfo";
 
@@ -99,41 +101,49 @@ function buildUserinfoContainer(
   const joinTs = target.joinedAt ? Math.floor(target.joinedAt.getTime() / 1000) : null;
   const createTs = Math.floor(fullUser.createdAt.getTime() / 1000);
 
-  const container = new ContainerBuilder();
+  const container = new ContainerBuilder().setAccentColor(C.yellow);
 
-  // Header
+  // Header — name + status badge
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
       `## ${statusEmoji}  ${target.nickname ?? fullUser.username}\n` +
-      `<@${target.id}>  ·  \`${fullUser.tag}\`\n\n` +
-      `${rankLine}\n${verifyLine}`,
+      `-# ${fullUser.tag}  ·  ${statusLabel}`,
     ),
   );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
 
-  // Details
+  // Rank & verification as a blockquote block
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      [
-        `**Joined:** ${joinTs ? `<t:${joinTs}:D>  (<t:${joinTs}:R>)` : "Unknown"}`,
-        `**Created:** <t:${createTs}:D>  (<t:${createTs}:R>)`,
-        `**Status:** **${statusLabel}**`,
-      ].join("\n"),
+      `> ${rankLine}\n> ${verifyLine}`,
     ),
+  );
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
+
+  // Account details
+  const detailRows = [
+    `${E.info}  **Joined:** ${joinTs ? `<t:${joinTs}:D>  (<t:${joinTs}:R>)` : "Unknown"}`,
+    `${E.info}  **Created:** <t:${createTs}:D>  (<t:${createTs}:R>)`,
+  ];
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(detailRows.map((r) => `> ${r}`).join("\n")),
   );
 
   // Roles
   if (topRoles.length > 0) {
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `**Roles (${target.roles.cache.size - 1}):** ${topRoles.map((r) => `<@&${r.id}>`).join("  ")}`,
+        `> ${E.sliders}  **Roles (${target.roles.cache.size - 1}):** ${topRoles.map((r) => `<@&${r.id}>`).join("  ")}`,
       ),
     );
   }
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`-# ID: ${target.id}`),
+    new TextDisplayBuilder().setContent(`-# ◈  ID: ${target.id}`),
   );
 
   return container;

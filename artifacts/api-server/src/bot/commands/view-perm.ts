@@ -6,6 +6,7 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
+  SeparatorSpacingSize,
   MessageFlags,
   type GuildTextBasedChannel,
   Message,
@@ -13,6 +14,7 @@ import {
 import { getPermsForRole } from "../store.js";
 import { canRunCommand } from "../permissions.js";
 import { E } from "../emojis.js";
+import { C } from "../colors.js";
 
 export const COMMAND_NAME = "view-perm";
 
@@ -86,29 +88,34 @@ function buildViewPermContainer(guildId: string, roleId: string, roleName: strin
   const perms = getPermsForRole(guildId, roleId);
   const ts = Math.floor(Date.now() / 1000);
 
-  const container = new ContainerBuilder();
+  const container = new ContainerBuilder().setAccentColor(C.yellow);
+
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`## ${E.sliders}  Permissions — @${roleName}`),
+    new TextDisplayBuilder().setContent(
+      `## ${E.sliders}  Permissions — @${roleName}\n-# <@&${roleId}>`,
+    ),
   );
-  container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
 
   if (perms.length === 0) {
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `<@&${roleId}> has **no** bot command permissions.\nUse \`/add-perm\` or \`;add-perm\` to grant some.`,
+        `> ${E.cross}  No bot command permissions granted\n> ${E.info}  Use \`/add-perm\` or \`v!add-perm\` to grant some`,
       ),
     );
   } else {
+    const cmdRows = perms.map((cmd) => `> ${E.check}  \`/${cmd}\``).join("\n");
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `<@&${roleId}> can use **${perms.length}** command${perms.length === 1 ? "" : "s"}:\n\n` +
-        perms.map((cmd) => `${E.check}  \`/${cmd}\``).join("\n"),
+        `> ${E.info}  **${perms.length}** command${perms.length === 1 ? "" : "s"} granted\n${cmdRows}`,
       ),
     );
   }
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`-# Role ID: ${roleId}  ·  <t:${ts}:f>`),
+    new TextDisplayBuilder().setContent(`-# ◈  Role: ${roleId}  ·  <t:${ts}:f>`),
   );
 
   return container;
