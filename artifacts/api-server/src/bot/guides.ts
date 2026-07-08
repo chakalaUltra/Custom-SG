@@ -90,7 +90,7 @@ const GUIDES: Record<string, Guide> = {
   },
   warnings: {
     category: "warning",
-    emoji: E.search,
+    emoji: E.chart,
     description: "Shows the full warning history for a user.",
     usage: ";warnings <@user>",
     args: [
@@ -213,7 +213,7 @@ const GUIDES: Record<string, Guide> = {
   },
   modinfo: {
     category: "info",
-    emoji: E.search,
+    emoji: E.chart,
     description: "Shows a full summary of all mod actions recorded against a user.",
     usage: ";modinfo <@user>",
     args: [

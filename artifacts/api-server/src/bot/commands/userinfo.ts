@@ -80,7 +80,7 @@ function buildUserinfoContainer(
   const isMainer = verifyConfig ? target.roles.cache.has(verifyConfig.mainerRoleId) : false;
   const isVerified = verifyConfig ? target.roles.cache.has(verifyConfig.verifiedRoleId) : false;
 
-  const statusEmoji = isMainer ? E.star : isVerified ? E.shield : E.question;
+  const statusEmoji = isMainer ? E.star : isVerified ? E.shield : E.info;
   const statusLabel = isMainer ? "Mainer" : isVerified ? "Verified" : "Visitor";
 
   const topRoles = [...target.roles.cache.values()]

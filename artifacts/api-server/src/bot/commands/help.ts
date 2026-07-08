@@ -146,7 +146,7 @@ function buildOverviewContainer(): ContainerBuilder {
   );
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`-# ${E.down}  Select a category below to browse its commands`),
+    new TextDisplayBuilder().setContent(`-# ${E.refresh}  Select a category below to browse its commands`),
   );
 
   container.addActionRowComponents(buildSelectMenu());
