@@ -45,8 +45,8 @@ const SECTIONS: Section[] = [
     description: "Commands for verifying members and granting status roles.",
     commands: [
       { slash: "/verify-roles",                          desc: "Set which roles count as Verified and Mainer" },
-      { slash: "/verify",  prefix: ";verify @user",     desc: "Grant a user the Verified role" },
-      { slash: "/mainer",  prefix: ";mainer @user",     desc: "Promote a verified user to Mainer" },
+      { slash: "/verify",  prefix: "v!verify @user",     desc: "Grant a user the Verified role" },
+      { slash: "/mainer",  prefix: "v!mainer @user",     desc: "Promote a verified user to Mainer" },
     ],
   },
   {
@@ -57,9 +57,9 @@ const SECTIONS: Section[] = [
     color: C.catWarning,
     description: "Issue, view, and remove warnings from a user's record.",
     commands: [
-      { slash: "/warn",     prefix: ";warn @user <reason>",  desc: "Issue a warning to a user" },
-      { slash: "/warnings", prefix: ";warnings @user",       desc: "View all warnings on a user's record" },
-      { slash: "/dewarn",   prefix: ";dewarn @user",         desc: "Remove a specific warning from a user" },
+      { slash: "/warn",     prefix: "v!warn @user <reason>",  desc: "Issue a warning to a user" },
+      { slash: "/warnings", prefix: "v!warnings @user",       desc: "View all warnings on a user's record" },
+      { slash: "/dewarn",   prefix: "v!dewarn @user",         desc: "Remove a specific warning from a user" },
     ],
   },
   {
@@ -70,11 +70,11 @@ const SECTIONS: Section[] = [
     color: C.catModeration,
     description: "Core moderation actions — mute, kick, ban, and unban.",
     commands: [
-      { slash: "/mute",   prefix: ";mute @user <duration> <reason>",  desc: "Timeout a user for a set duration" },
-      { slash: "/unmute", prefix: ";unmute @user <reason>",           desc: "Remove an active timeout" },
-      { slash: "/kick",   prefix: ";kick @user <reason>",             desc: "Kick a user from the server" },
-      { slash: "/ban",    prefix: ";ban @user <reason>",              desc: "Permanently ban a user" },
-      { slash: "/unban",  prefix: ";unban <userID> <reason>",         desc: "Lift a ban by user ID" },
+      { slash: "/mute",   prefix: "v!mute @user <duration> <reason>",  desc: "Timeout a user for a set duration" },
+      { slash: "/unmute", prefix: "v!unmute @user <reason>",           desc: "Remove an active timeout" },
+      { slash: "/kick",   prefix: "v!kick @user <reason>",             desc: "Kick a user from the server" },
+      { slash: "/ban",    prefix: "v!ban @user <reason>",              desc: "Permanently ban a user" },
+      { slash: "/unban",  prefix: "v!unban <userID> <reason>",         desc: "Lift a ban by user ID" },
     ],
   },
   {
@@ -85,8 +85,8 @@ const SECTIONS: Section[] = [
     color: C.catRole,
     description: "Give and remove roles, assign ranks, and configure rank tiers.",
     commands: [
-      { slash: "/role",       prefix: ";role @user <role>",                       desc: "Toggle a role on a user" },
-      { slash: "/rank",       prefix: ";rank @user <stage> <mid> <extra>",       desc: "Assign a full rank to a user" },
+      { slash: "/role",       prefix: "v!role @user <role>",                       desc: "Toggle a role on a user" },
+      { slash: "/rank",       prefix: "v!rank @user <stage> <mid> <extra>",       desc: "Assign a full rank to a user" },
       { slash: "/rank-roles",                                                      desc: "Configure roles for each rank tier" },
     ],
   },
@@ -98,9 +98,9 @@ const SECTIONS: Section[] = [
     color: C.catInfo,
     description: "Look up user info, mod history, and staff statistics.",
     commands: [
-      { slash: "/userinfo",    prefix: ";userinfo @user",   desc: "View a user's full info card" },
-      { slash: "/modinfo",     prefix: ";modinfo @user",    desc: "View all mod actions against a user" },
-      { slash: "/leaderboard", prefix: ";leaderboard",      desc: "Top 12 staff ranked by mod actions" },
+      { slash: "/userinfo",    prefix: "v!userinfo @user",   desc: "View a user's full info card" },
+      { slash: "/modinfo",     prefix: "v!modinfo @user",    desc: "View all mod actions against a user" },
+      { slash: "/leaderboard", prefix: "v!leaderboard",      desc: "Top 12 staff ranked by mod actions" },
     ],
   },
   {
@@ -111,9 +111,9 @@ const SECTIONS: Section[] = [
     color: C.catConfig,
     description: "Manage bot permissions, role access, and log channels.",
     commands: [
-      { slash: "/add-perm",  prefix: ";add-perm @role <cmd>",  desc: "Grant a role access to a command" },
-      { slash: "/view-perm", prefix: ";view-perm @role",        desc: "List all permissions a role has" },
-      { slash: "/modlogs",   prefix: ";modlogs",                desc: "Set the mod log channel" },
+      { slash: "/add-perm",  prefix: "v!add-perm @role <cmd>",  desc: "Grant a role access to a command" },
+      { slash: "/view-perm", prefix: "v!view-perm @role",        desc: "List all permissions a role has" },
+      { slash: "/modlogs",   prefix: "v!modlogs",                desc: "Set the mod log channel" },
     ],
   },
 ];
@@ -124,7 +124,7 @@ function buildOverviewContainer(): ContainerBuilder {
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
       `## ${E.info}  Vanguard Senate — Command Reference\n` +
-      `-# Use \`/command\` (slash) or \`;command\` (prefix)  ·  Run \`;<command>\` with no args for a full guide`,
+      `-# Use \`/command\` (slash) or \`v!command\` (prefix)  ·  Run \`v!<command>\` with no args for a full guide`,
     ),
   );
 

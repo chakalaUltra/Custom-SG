@@ -24,7 +24,7 @@ import { replyWithGuide } from "./guides.js";
 import { logger } from "../lib/logger.js";
 import { E } from "./emojis.js";
 
-const PREFIX = ";";
+const PREFIX = "v!";
 
 export async function handlePrefixMessage(message: Message): Promise<void> {
   if (!message.content.startsWith(PREFIX)) return;
